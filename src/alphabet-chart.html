@@ -103,15 +103,15 @@
         }
 
         .acuity-label {
-            padding-right: 15px;
-            margin-right: 15px;
+            padding-right: 10px;
+            margin-right: 10px;
             border-right: 1px solid;
             display: flex;
             flex-direction: column;
             align-items: flex-end;
             justify-content: center;
             gap: 4px;
-            width: 150px;
+            width: 80px;
             flex-shrink: 0;
             text-align: right;
             height: 100%;
@@ -241,7 +241,8 @@
 
             const snellenSpan = document.createElement('span');
             snellenSpan.classList.add('snellen-value');
-            snellenSpan.textContent = logMarToSnellen(logMAR, distance);
+            const snellenResult = logMarToSnellen(logMAR, distance);
+            snellenSpan.textContent = typeof snellenResult === 'string' ? snellenResult : snellenResult.primary;
             snellenSpan.style.color = labelColor;
 
             const logmarSpan = document.createElement('span');

@@ -280,7 +280,8 @@
 
                 const snellenSpan = document.createElement('span');
                 snellenSpan.className = 'snellen-value';
-                snellenSpan.textContent = logMarToSnellen(logmar, distance);
+                const snellenResult = logMarToSnellen(logmar, distance);
+                snellenSpan.textContent = typeof snellenResult === 'string' ? snellenResult : snellenResult.primary;
 
                 const logmarSpan = document.createElement('span');
                 logmarSpan.className = 'logmar-value';

@@ -103,15 +103,15 @@
         }
 
         .acuity-label {
-            padding-right: 15px;
-            margin-right: 15px;
+            padding-right: 10px;
+            margin-right: 10px;
             border-right: 1px solid;
             display: flex;
             flex-direction: column;
             align-items: flex-end;
             justify-content: center;
             gap: 4px;
-            width: 150px;
+            width: 80px;
             flex-shrink: 0;
             text-align: right;
             height: 100%;
@@ -247,7 +247,7 @@
                 scalingFactor: parseFloat(settings.scalingFactor) || 1.0,
                 letterColor: settings.letterColor || '#000000',
                 backgroundColor: settings.backgroundColor || '#ffffff',
-                distribution: settings.distribution || 'etdrs',
+                distribution: 'etdrs', // Force ETDRS (5 letters per row) for LogMAR only
                 selectedRows: (settings.selectedRows || []).map(v => parseFloat(v))
             };
 

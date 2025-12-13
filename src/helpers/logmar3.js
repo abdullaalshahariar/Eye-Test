@@ -17,7 +17,7 @@ export function logMarToSnellen(logMAR, distance) {
 
     if (distanceDenominator > 600) return `${distance}/>600`;
 
-    return `${primarySnellen} ${secondarySnellen}`;
+    return { primary: primarySnellen, secondary: secondarySnellen, full: `${primarySnellen} ${secondarySnellen}` };
 }
 
 export function calculateFontSize(logMAR, distance, scalingFactor) {
@@ -89,7 +89,8 @@ export function generateRow(logMAR, distance, characters, scalingFactor, letterC
 
     const snellenSpan = document.createElement('span');
     snellenSpan.classList.add('snellen-value');
-    snellenSpan.textContent = logMarToSnellen(logMAR, distance);
+    const snellenResult = logMarToSnellen(logMAR, distance);
+    snellenSpan.textContent = typeof snellenResult === 'string' ? snellenResult : snellenResult.primary;
     snellenSpan.style.color = labelColor;
 
     const logmarSpan = document.createElement('span');

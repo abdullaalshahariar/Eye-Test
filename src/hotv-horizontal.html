@@ -287,9 +287,10 @@
             const labelDiv = document.createElement('div');
             labelDiv.className = 'acuity-label';
 
-            const snellenSpan = document.createElement('span');
+            const snellenSpan = document.createElement('div');
             snellenSpan.className = 'snellen-value';
-            snellenSpan.textContent = logMarToSnellen(currentLogmar, distance);
+            const snellenResult = logMarToSnellen(currentLogmar, distance);
+            snellenSpan.textContent = typeof snellenResult === 'string' ? snellenResult : snellenResult.primary;
 
             const logmarSpan = document.createElement('span');
             logmarSpan.className = 'logmar-value';

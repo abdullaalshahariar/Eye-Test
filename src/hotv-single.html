@@ -187,8 +187,8 @@
 
         function updateSizeIndicator() {
             const currentLogmar = logmarValues[currentLogmarIndex];
-            const snellen = logMarToSnellen(currentLogmar, distance);
-            sizeIndicator.textContent = snellen;
+            const snellenResult = logMarToSnellen(currentLogmar, distance);
+            sizeIndicator.textContent = typeof snellenResult === 'string' ? snellenResult : snellenResult.primary;
         }
 
         function updateButtons() {
