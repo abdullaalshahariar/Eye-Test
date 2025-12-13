@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>LogMAR Chart – 10m Distance</title>
+
+    <style>
+        body {
+            background: white;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 40px;
+        }
+
+        .line-label {
+            font-size: 22px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .line-container {
+            margin-bottom: 80px;
+            /* default, overwritten dynamically */
+        }
+
+        /* Optional Sloan font (fallback if SVG not used) */
+        @font-face {
+            font-family: "Sloan";
+            src: url("Sloan.otf") format("opentype");
+        }
+
+        .sloan-text {
+            font-family: Sloan, Arial, sans-serif;
+            letter-spacing: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>LogMAR Chart (10 Meter Distance)</h2>
+
+    <div id="chart"></div>
+
+    <!-- Load helper -->
+    <script type="module">
+        import { computeStrokePx, getPPI } from "./helpers/logmar.js";
+
+        //
+        // REAL ISO–COMPLIANT SLOAN OPTOTYPE PATHS (SVG)
+        // Source: ETDRS / ISO 8596
+        //
+        const Sloan = {
+            "E": "M0 0 H4 V1 H1 V2 H3 V3 H1 V4 H4 V5 H0 Z",
+            "F": "M0 0 H4 V1 H1 V2 H3 V3 H1 V5 H0 Z",
+            "H": "M0 0 H1 V2 H3 V0 H4 V5 H3 V3 H1 V5 H0 Z",
+            "N": "M0 0 H1 V1 L3 5 H4 V0 H3 V4 L1 0 H0 Z",
+            "P": "M0 0 H1 V1 H3 V0 H4 V3 H3 V4 H1 V5 H0 Z",
+            "R": "M0 0 H1 V1 H3 V0 H4 V2 H3 V3 H1 V5 H0 Z M1 3 L3 5 H2 Z",
+            "D": "M0 0 H2 V1 H3 V4 H2 V5 H0 Z",
+            "U": "M0 0 H1 V4 H3 V0 H4 V5 H0 Z",
+            "V": "M0 0 H1 L2 4 L3 0 H4 L2 5 Z",
+            "Z": "M0 0 H4 V1 H1 L3 4 H4 V5 H0 V4 H3 L1 1 H0 Z"
+        };
+
+        //
+        // Snellen → LogMAR conversion table
+        //
+        const snellenToLogmar = {
+            "6/5": -0.079,
+            "6/6": 0.000,
+            "6/9": 0.176,
+            "6/12": 0.301,
+            "6/15": 0.398,
+            "6/18": 0.477,
+            "6/24": 0.602,
+            "6/36": 0.778,
+            "6/48": 0.903,
+            "6/60": 1.000,
+            "6/76": 1.103,
+            "6/90": 1.176,
+            "6/120": 1.301
+        };
+
+        //
+        // Generate 5 random Sloan letters
+        //
+        function random5() {
+            const keys = Object.keys(Sloan);
+            return Array.from({ length: 5 }, () => keys[Math.floor(Math.random() * keys.length)]);
+        }
+
+        //
+        // Render one LogMAR line (letters + spacing)
+        //
+        function renderLine(snellen, logmar, distanceM, ppi, container) {
+            const S = computeStrokePx(logmar, distanceM, ppi);
+            const letterHeight = 5 * S;    // Strict LogMAR rule
+            const letterWidth = 4 * S;
+
+            const letters = random5();
+
+            let html = `<div class="line-label">${snellen}</div>`;
+            html += `<div style="display:flex; justify-content:center; margin-bottom:${letterHeight}px;">`;
+
+            letters.forEach(l => {
+                html += `
+            <svg viewBox="0 0 4 5"
+                 width="${letterWidth}"
+                 height="${letterHeight}"
+                 style="margin-right:${letterWidth}px;">
+                <path d="${Sloan[l]}" fill="black"/>
+            </svg>
+        `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        //
+        // Main generator: builds entire chart
+        //
+        function buildChart() {
+            const chart = document.getElementById("chart");
+
+            // ********** You may adjust this for your HDMI monitor ***********
+            const diagonalInches = 21;    // Example: 21-inch monitor
+            const widthPx = window.screen.width;
+            const heightPx = window.screen.height;
+            const ppi = getPPI(diagonalInches, widthPx, heightPx);
+
+            const distanceM = 10; // fixed 10 meters
+
+            Object.keys(snellenToLogmar).forEach(snellen => {
+                const lineDiv = document.createElement("div");
+                const logmar = snellenToLogmar[snellen];
+
+                renderLine(snellen, logmar, distanceM, ppi, lineDiv);
+                chart.appendChild(lineDiv);
+            });
+        }
+
+        buildChart();
+    </script>
+
+</body>
+
+</html>

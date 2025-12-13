@@ -1,0 +1,59 @@
+{
+  "name": "electron_tutorial",
+  "version": "1.0.0",
+  "description": "Eye Clinic - Visual acuity testing application",
+  "homepage": "https://github.com/shahariar/eye-clinic",
+  "license": "MIT",
+  "author": {
+    "name": "Abdulla Al Shahariar",
+    "email": "shahariar@example.com"
+  },
+  "type": "commonjs",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:linux": "electron-builder --linux",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.eyeclinic.app",
+    "productName": "Eye Clinic",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "package.json",
+      "src/**/*"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Medical",
+      "maintainer": "Abdulla Al Shahariar <shahariar@example.com>"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "asar": false
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.healthcare-fitness"
+    }
+  },
+  "devDependencies": {
+    "electron": "^39.2.1",
+    "electron-builder": "^26.0.12"
+  }
+}

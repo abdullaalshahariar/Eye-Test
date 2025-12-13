@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astigmatism Axis Chart - Eye Clinic</title>
+    <link rel="stylesheet" href="chart-styles.css">
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --text-color: #dcddde;
+            --background-color: #1e1e1e;
+            --container-bg: #252525;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--background-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 20px 40px;
+            background: var(--container-bg);
+            border-bottom: 1px solid #2d2d2d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-color);
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            color: var(--text-color);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #3d3d3d;
+            border-color: var(--primary-color);
+        }
+
+        button.primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        button.primary:hover {
+            background: #6d28d9;
+        }
+
+        .content {
+            flex: 1;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+        }
+
+        #test-container {
+            background: white;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        #astigmatism-chart {
+            display: block;
+        }
+
+        @media print {
+            .header {
+                display: none !important;
+            }
+
+            #test-container {
+                width: 100%;
+                height: 100vh;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Astigmatism Axis Chart</h1>
+        <div class="header-buttons" id="header-buttons">
+            <!-- Dynamic buttons will be inserted here -->
+        </div>
+    </div>
+
+    <div class="content">
+        <div id="test-container">
+            <div class="chart-container">
+                <svg id="astigmatism-chart"></svg>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import {
+            loadSettings,
+            calculateFontSize
+        } from './helpers/logmar3.js';
+
+        const svg = document.getElementById('astigmatism-chart');
+        const headerButtons = document.getElementById('header-buttons');
+
+        // LogMAR values for size control
+        const logmarValues = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0, -0.1, -0.2, -0.3];
+        let currentLogmarIndex = 6; // Start at 0.4
+        const numberOfLines = 19; // 19 lines at 10° intervals
+        let rotationAngle = 0; // Rotation angle for the entire chart
+
+        let distance = 6;
+        let scalingFactor = 1.0;
+
+        function loadCurrentSettings() {
+            const result = loadSettings();
+            if (result.success) {
+                const settings = result.settings;
+                distance = parseFloat(settings.distance) || 6;
+                scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            }
+        }
+
+        function updateButtons() {
+            headerButtons.innerHTML = '';
+
+            const backBtn = document.createElement('button');
+            backBtn.textContent = '← Back';
+            backBtn.onclick = () => {
+                window.history.back();
+            };
+            headerButtons.appendChild(backBtn);
+
+            const largerBtn = document.createElement('button');
+            largerBtn.textContent = '+ Larger';
+            largerBtn.onclick = increaseSize;
+            headerButtons.appendChild(largerBtn);
+
+            const smallerBtn = document.createElement('button');
+            smallerBtn.textContent = '- Smaller';
+            smallerBtn.onclick = decreaseSize;
+            headerButtons.appendChild(smallerBtn);
+
+            const rotateLeftBtn = document.createElement('button');
+            rotateLeftBtn.textContent = '↺ Rotate Left';
+            rotateLeftBtn.onclick = rotateLeft;
+            headerButtons.appendChild(rotateLeftBtn);
+
+            const rotateRightBtn = document.createElement('button');
+            rotateRightBtn.textContent = '↻ Rotate Right';
+            rotateRightBtn.onclick = rotateRight;
+            headerButtons.appendChild(rotateRightBtn);
+        }
+
+        function renderChart() {
+            const currentLogmar = logmarValues[currentLogmarIndex];
+
+            // Calculate size based on LogMAR
+            const baseFontSize = calculateFontSize(currentLogmar, distance, scalingFactor);
+            const diameter = baseFontSize * 6;
+            const radius = diameter / 2;
+            const lineLength = radius * 0.9;
+            const lineThickness = baseFontSize / 8;
+
+            // Center point - moved down so lines extend upward
+            // Padding should scale with chart size to accommodate arrow and labels
+            const padding = radius * 0.7; // Proportional padding based on radius
+            const centerX = radius + padding;
+            const centerY = diameter + padding * 0.6;
+
+            // SVG viewBox and size - padding scales with chart
+            const svgSize = diameter + padding * 2;
+            svg.setAttribute('width', svgSize);
+            svg.setAttribute('height', svgSize);
+            svg.setAttribute('viewBox', `0 0 ${svgSize} ${svgSize}`);
+
+            // Clear previous content
+            svg.innerHTML = '';
+
+            // Draw 19 radial lines at 10° intervals
+            // Starting from 0° (pointing left) to 180° (pointing right) in a semicircle
+            for (let i = 0; i < numberOfLines; i++) {
+                const angle = i * 10; // 0°, 10°, 20°, ..., 180°
+                // Adjust angle so 0° points left (180° in standard coordinates)
+                const adjustedAngle = angle + 180;
+                const radians = (adjustedAngle * Math.PI) / 180;
+
+                // Calculate end point of line
+                const x2 = centerX + lineLength * Math.cos(radians);
+                const y2 = centerY + lineLength * Math.sin(radians);
+
+                // Create line
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', centerX);
+                line.setAttribute('y1', centerY);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', '#000000');
+                line.setAttribute('stroke-width', lineThickness);
+                line.setAttribute('stroke-linecap', 'round');
+
+                svg.appendChild(line);
+
+                // Add angle labels at the end of each line
+                const labelDistance = radius * 1.05;
+                const labelX = centerX + labelDistance * Math.cos(radians);
+                const labelY = centerY + labelDistance * Math.sin(radians);
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', labelX);
+                text.setAttribute('y', labelY);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.setAttribute('font-size', baseFontSize / 4);
+                text.setAttribute('fill', '#666666');
+                text.textContent = `${angle}°`;
+
+                svg.appendChild(text);
+            }
+
+            // Draw center circle
+            const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            centerCircle.setAttribute('cx', centerX);
+            centerCircle.setAttribute('cy', centerY);
+            centerCircle.setAttribute('r', lineThickness * 1.5);
+            centerCircle.setAttribute('fill', '#000000');
+
+            svg.appendChild(centerCircle);
+
+            // Draw arrow indicator - this rotates
+            const arrowSize = baseFontSize / 2;
+            const arrowDistance = radius * 1.4; // Increased from 1.2 to move arrow further away
+
+            // Calculate arrow position based on rotation angle
+            // Use same coordinate system as lines: rotationAngle + 180
+            const arrowRadians = (rotationAngle + 180) * Math.PI / 180;
+            const arrowX = centerX + arrowDistance * Math.cos(arrowRadians);
+            const arrowY = centerY + arrowDistance * Math.sin(arrowRadians);
+
+            // Arrow triangle pointing toward center
+            const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+
+            // Calculate arrow pointing towards center
+            const arrowAngle = Math.atan2(centerY - arrowY, centerX - arrowX);
+            const point1X = arrowX + arrowSize * Math.cos(arrowAngle);
+            const point1Y = arrowY + arrowSize * Math.sin(arrowAngle);
+            const point2X = arrowX + arrowSize / 2 * Math.cos(arrowAngle + Math.PI / 2);
+            const point2Y = arrowY + arrowSize / 2 * Math.sin(arrowAngle + Math.PI / 2);
+            const point3X = arrowX + arrowSize / 2 * Math.cos(arrowAngle - Math.PI / 2);
+            const point3Y = arrowY + arrowSize / 2 * Math.sin(arrowAngle - Math.PI / 2);
+
+            const points = [
+                [point1X, point1Y],
+                [point2X, point2Y],
+                [point3X, point3Y]
+            ].map(p => p.join(',')).join(' ');
+            arrow.setAttribute('points', points);
+            arrow.setAttribute('fill', '#FF0000');
+
+            svg.appendChild(arrow);
+
+            // Add rotating degree label
+            const labelDistance2 = radius * 1.55; // Increased to be beyond the arrow
+            const labelX = centerX + labelDistance2 * Math.cos(arrowRadians);
+            const labelY = centerY + labelDistance2 * Math.sin(arrowRadians);
+
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', labelX);
+            label.setAttribute('y', labelY);
+            label.setAttribute('text-anchor', 'middle');
+            label.setAttribute('dominant-baseline', 'middle');
+            label.setAttribute('font-size', baseFontSize / 3);
+            label.setAttribute('font-weight', 'bold');
+            label.setAttribute('fill', '#FF0000');
+            // Normalize rotation angle to 0-180 range
+            let displayAngle = ((rotationAngle % 360) + 360) % 360;
+            if (displayAngle > 180) displayAngle = 360 - displayAngle;
+            label.textContent = `${displayAngle}°`;
+
+            svg.appendChild(label);
+        }
+
+        function init() {
+            loadCurrentSettings();
+            updateButtons();
+            renderChart();
+        }
+
+        function increaseSize() {
+            if (currentLogmarIndex > 0) {
+                currentLogmarIndex--;
+                loadCurrentSettings();
+                renderChart();
+            }
+        }
+
+        function decreaseSize() {
+            if (currentLogmarIndex < logmarValues.length - 1) {
+                currentLogmarIndex++;
+                loadCurrentSettings();
+                renderChart();
+            }
+        }
+
+        function rotateLeft() {
+            // Only allow rotation if not already at 0°
+            if (rotationAngle > 0) {
+                rotationAngle -= 10;
+                renderChart();
+            }
+        }
+
+        function rotateRight() {
+            // Only allow rotation if not already at 180°
+            if (rotationAngle < 180) {
+                rotationAngle += 10;
+                renderChart();
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'ArrowUp' || e.key === '+' || e.key === '=') {
+                e.preventDefault();
+                increaseSize();
+            }
+            if (e.key === 'ArrowDown' || e.key === '-') {
+                e.preventDefault();
+                decreaseSize();
+            }
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                rotateLeft();
+            }
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                rotateRight();
+            }
+            if (e.key === 'Escape') {
+                window.history.back();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            renderChart();
+        });
+
+        setTimeout(() => init(), 100);
+    </script>
+</body>
+
+</html>

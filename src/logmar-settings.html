@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogMAR Settings - Eye Clinic</title>
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --text-color: #dcddde;
+            --background-color: #1e1e1e;
+            --container-bg: #252525;
+            --border-color: #3d3d3d;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--background-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        .header {
+            padding: 20px 40px;
+            background: var(--container-bg);
+            border-bottom: 1px solid #2d2d2d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .settings-section {
+            background: var(--container-bg);
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .settings-section h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        input[type="color"],
+        select {
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 16px;
+            background: #1e1e1e;
+            color: var(--text-color);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input[type="color"] {
+            height: 42px;
+            padding: 5px;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        #custom-letters-container {
+            grid-column: span 2;
+        }
+
+        .row-selector {
+            margin-top: 20px;
+            padding: 20px;
+            background: #1e1e1e;
+            border-radius: 8px;
+        }
+
+        .row-selector h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .row-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .row-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--container-bg);
+            padding: 8px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .row-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-color);
+        }
+
+        .row-checkbox label {
+            margin-bottom: 0;
+            font-weight: 500;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .select-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .calibration-box {
+            margin-top: 20px;
+            padding: 25px;
+            border: 1px solid var(--success-color);
+            border-radius: 8px;
+            background: #064e3b;
+            text-align: center;
+        }
+
+        .calibration-box h3 {
+            margin-top: 0;
+            color: var(--success-color);
+        }
+
+        #calibration-letter {
+            margin: 25px auto;
+            padding: 15px;
+            border: 1px dashed var(--success-color);
+            display: inline-block;
+            min-width: 50px;
+            font-family: 'Optician Sans', Arial, sans-serif;
+            font-weight: bold;
+            background: white;
+            color: black;
+        }
+
+        button {
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #3d3d3d;
+            transform: translateY(-2px);
+        }
+
+        button.primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        button.primary:hover {
+            background: #6d28d9;
+        }
+
+        button.success {
+            background: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .message.error {
+            background: #7f1d1d;
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+
+        .message.success {
+            background: #064e3b;
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .message:empty {
+            display: none;
+        }
+
+        /* Print Styles - Only Calibration Letter */
+        @media print {
+            @page {
+                size: A4;
+                margin: 20mm;
+            }
+
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+
+            /* Hide everything except calibration */
+            .header,
+            .settings-section h2,
+            .settings-grid,
+            .row-selector,
+            .button-group,
+            .message,
+            .calibration-box h3,
+            .calibration-box p,
+            .calibration-box .setting-item,
+            .calibration-box div:has(#target-height),
+            .calibration-box button {
+                display: none !important;
+            }
+
+            .content {
+                padding: 0 !important;
+            }
+
+            .settings-section {
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: #fff !important;
+            }
+
+            .calibration-box {
+                border: none !important;
+                background: #fff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                text-align: center;
+            }
+
+            #calibration-letter {
+                display: block !important;
+                border: 1px solid #000 !important;
+                background: #fff !important;
+                color: #000 !important;
+                margin: 50px auto !important;
+                padding: 20px !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>⚙️ LogMAR Chart Settings</h1>
+        <button onclick="window.history.back()">← Back to Menu</button>
+    </div>
+
+    <div class="content">
+        <div class="settings-section">
+            <h2>Chart Configuration</h2>
+
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label for="distance">Testing Distance (meters)</label>
+                    <input type="number" id="distance" value="6" min="0.1" step="0.1">
+                    <small style="font-size: 0.8em; color: #888; margin-top: 4px;">Standard: 6m, 4m, or 3m</small>
+                </div>
+
+                <div class="setting-item">
+                    <label for="letter-set">Character Set</label>
+                    <select id="letter-set">
+                        <option value="ETDRS">ETDRS Letters</option>
+                        <option value="Snellen">Snellen Letters</option>
+                        <option value="Numbers">Numbers (0-9)</option>
+                        <option value="Custom">Custom Characters</option>
+                    </select>
+                </div>
+
+                <div class="setting-item" id="custom-letters-container" style="display: none;">
+                    <label for="custom-letters">Custom Characters (comma-separated)</label>
+                    <input type="text" id="custom-letters" placeholder="e.g., C, D, H, K, N">
+                </div>
+
+                <div class="setting-item">
+                    <label for="distribution">Letter Distribution</label>
+                    <select id="distribution">
+                        <option value="snellen">Snellen-like (Variable)</option>
+                        <option value="etdrs">ETDRS (5 per row)</option>
+                        <option value="linear">Linear Increase</option>
+                    </select>
+                </div>
+
+                <div class="setting-item">
+                    <label for="letter-color">Letter Color</label>
+                    <input type="color" id="letter-color" value="#000000">
+                </div>
+
+                <div class="setting-item">
+                    <label for="background-color">Background Color</label>
+                    <input type="color" id="background-color" value="#ffffff">
+                </div>
+            </div>
+
+            <div class="row-selector">
+                <h3>Select Rows to Display</h3>
+                <div class="select-buttons">
+                    <button onclick="selectAllRows()">Select All</button>
+                    <button onclick="deselectAllRows()">Deselect All</button>
+                    <button onclick="selectCommonRows()">Common Test Rows</button>
+                </div>
+                <div class="row-options" id="row-options">
+                    <!-- Generated by JS -->
+                </div>
+            </div>
+
+            <div class="calibration-box" id="calibration-section">
+                <h3>Screen Calibration</h3>
+                <p>1. Click "Print Calibration" to print this letter.<br>
+                    2. Measure the printed letter's height with a ruler.<br>
+                    3. Adjust the scaling factor until the on-screen letter matches the printed size.</p>
+                <div id="calibration-letter">E</div>
+                <div class="setting-item" style="max-width: 300px; margin: 0 auto;">
+                    <label for="scaling-factor">Scaling Factor</label>
+                    <input type="number" id="scaling-factor" value="1.0" step="0.01" min="0.1">
+                </div>
+                <div style="margin-top: 15px;">
+                    <span>Target Height: </span>
+                    <strong id="target-height" style="color: var(--success-color);">8.73 mm</strong>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button onclick="printCalibration()" class="primary">🖨️ Print Calibration</button>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button onclick="saveAndViewChart()" class="success">💾 Save & View Chart</button>
+                <button onclick="saveSettings()">💾 Save Settings</button>
+                <button onclick="loadSettings()">📂 Load Settings</button>
+            </div>
+
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import {
+            saveSettings as saveToStorage,
+            loadSettings as loadFromStorage,
+            getTargetCalibrationHeightMm,
+            calculateFontSize,
+            getCharacterSet,
+            ETDRS_LETTERS
+        } from './helpers/logmar3.js';
+
+        const distanceInput = document.getElementById('distance');
+        const letterSetSelect = document.getElementById('letter-set');
+        const customLettersContainer = document.getElementById('custom-letters-container');
+        const customLettersInput = document.getElementById('custom-letters');
+        const distributionSelect = document.getElementById('distribution');
+        const letterColorInput = document.getElementById('letter-color');
+        const backgroundColorInput = document.getElementById('background-color');
+        const scalingFactorInput = document.getElementById('scaling-factor');
+        const rowOptionsContainer = document.getElementById('row-options');
+        const calibrationLetterElement = document.getElementById('calibration-letter');
+        const targetHeightElement = document.getElementById('target-height');
+        const messageElement = document.getElementById('message');
+
+        function showMessage(text, type = 'success') {
+            messageElement.textContent = text;
+            messageElement.className = `message ${type}`;
+            setTimeout(() => {
+                messageElement.textContent = '';
+                messageElement.className = 'message';
+            }, 4000);
+        }
+
+        function generateRowOptions() {
+            rowOptionsContainer.innerHTML = '';
+            const distance = parseFloat(distanceInput.value) || 6;
+
+            const logMARValues = [];
+            for (let logMAR = 1.0; logMAR >= -0.3; logMAR -= 0.1) {
+                logMARValues.push(Math.round(logMAR * 10) / 10);
+            }
+
+            logMARValues.forEach(logMAR => {
+                const checkboxId = `row-${logMAR.toFixed(1).replace('.', '_').replace('-', 'n')}`;
+
+                const checkboxDiv = document.createElement('div');
+                checkboxDiv.className = 'row-checkbox';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = checkboxId;
+                checkbox.value = logMAR;
+                checkbox.checked = true;
+
+                const label = document.createElement('label');
+                label.htmlFor = checkboxId;
+                label.textContent = `LogMAR ${logMAR.toFixed(1)}`;
+
+                checkboxDiv.appendChild(checkbox);
+                checkboxDiv.appendChild(label);
+                rowOptionsContainer.appendChild(checkboxDiv);
+            });
+        }
+
+        function updateCalibrationDisplay() {
+            const distance = parseFloat(distanceInput.value) || 6;
+            const scalingFactor = parseFloat(scalingFactorInput.value) || 1.0;
+            const letterSetKey = letterSetSelect.value;
+            const customLettersValue = customLettersInput.value;
+
+            const fontSize = calculateFontSize(0.0, distance, scalingFactor);
+            calibrationLetterElement.style.fontSize = `${fontSize.toFixed(2)}pt`;
+            calibrationLetterElement.style.color = letterColorInput.value;
+
+            const characters = getCharacterSet(letterSetKey, customLettersValue);
+            calibrationLetterElement.textContent = characters.length > 0 ? characters[0] : 'E';
+
+            const targetHeightMm = getTargetCalibrationHeightMm(distance);
+            targetHeightElement.textContent = `${targetHeightMm.toFixed(2)} mm`;
+        }
+
+        function getCurrentSettings() {
+            return {
+                distance: distanceInput.value,
+                letterSet: letterSetSelect.value,
+                customLetters: customLettersInput.value,
+                distribution: distributionSelect.value,
+                letterColor: letterColorInput.value,
+                backgroundColor: backgroundColorInput.value,
+                scalingFactor: scalingFactorInput.value,
+                selectedRows: Array.from(rowOptionsContainer.querySelectorAll('input[type="checkbox"]:checked'))
+                    .map(cb => cb.value)
+            };
+        }
+
+        window.saveSettings = function () {
+            const settings = getCurrentSettings();
+            const result = saveToStorage(settings);
+            showMessage(result.message, result.success ? 'success' : 'error');
+        };
+
+        window.loadSettings = function () {
+            const result = loadFromStorage();
+            if (result.success) {
+                const s = result.settings;
+                distanceInput.value = s.distance || '6';
+                letterSetSelect.value = s.letterSet || 'ETDRS';
+                customLettersInput.value = s.customLetters || '';
+                distributionSelect.value = s.distribution || 'etdrs';
+                letterColorInput.value = s.letterColor || '#000000';
+                backgroundColorInput.value = s.backgroundColor || '#ffffff';
+                scalingFactorInput.value = s.scalingFactor || '1.0';
+
+                customLettersContainer.style.display = letterSetSelect.value === 'Custom' ? 'block' : 'none';
+
+                const selectedRowValues = s.selectedRows || [];
+                rowOptionsContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = selectedRowValues.includes(checkbox.value);
+                });
+
+                updateCalibrationDisplay();
+                showMessage('Settings loaded successfully!', 'success');
+            } else {
+                showMessage(result.message || 'No saved settings found.', 'error');
+            }
+        };
+
+        window.saveAndViewChart = function () {
+            const settings = getCurrentSettings();
+            const result = saveToStorage(settings);
+            if (result.success) {
+                window.location.href = 'logmar3.html';
+            } else {
+                showMessage(result.message, 'error');
+            }
+        };
+
+        window.printCalibration = function () {
+            // Simply trigger print - CSS will handle showing only calibration letter
+            window.print();
+        };
+
+        window.selectAllRows = function () {
+            rowOptionsContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+        };
+
+        window.deselectAllRows = function () {
+            rowOptionsContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        };
+
+        window.selectCommonRows = function () {
+            deselectAllRows();
+            const commonLogMAR = [1.0, 0.7, 0.4, 0.3, 0.1, 0.0, -0.1, -0.3];
+            rowOptionsContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                const val = parseFloat(checkbox.value);
+                if (commonLogMAR.some(c => Math.abs(val - c) < 0.01)) {
+                    checkbox.checked = true;
+                }
+            });
+        };
+
+        // Event listeners
+        letterSetSelect.addEventListener('change', function () {
+            customLettersContainer.style.display = this.value === 'Custom' ? 'block' : 'none';
+            updateCalibrationDisplay();
+        });
+
+        distanceInput.addEventListener('input', () => {
+            generateRowOptions();
+            updateCalibrationDisplay();
+        });
+
+        scalingFactorInput.addEventListener('input', updateCalibrationDisplay);
+        letterColorInput.addEventListener('input', updateCalibrationDisplay);
+        customLettersInput.addEventListener('input', () => {
+            if (letterSetSelect.value === 'Custom') {
+                updateCalibrationDisplay();
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            // Ctrl+P or Cmd+P for Print Calibration
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                printCalibration();
+            }
+            // Ctrl+Enter or Cmd+Enter to Save & View Chart
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                saveAndViewChart();
+            }
+            // Escape to go back
+            if (e.key === 'Escape') {
+                window.history.back();
+            }
+        });
+
+        // Initialize
+        generateRowOptions();
+        updateCalibrationDisplay();
+
+        // Try to load saved settings on page load
+        const saved = loadFromStorage();
+        if (saved.success) {
+            loadSettings();
+        }
+    </script>
+</body>
+
+</html>

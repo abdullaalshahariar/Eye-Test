@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dot Chart - Eye Clinic</title>
+    <link rel="stylesheet" href="chart-styles.css">
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --text-color: #dcddde;
+            --background-color: #1e1e1e;
+            --container-bg: #252525;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--background-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 20px 40px;
+            background: var(--container-bg);
+            border-bottom: 1px solid #2d2d2d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-color);
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            color: var(--text-color);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #3d3d3d;
+            border-color: var(--primary-color);
+        }
+
+        button.primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        button.primary:hover {
+            background: #6d28d9;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        #chart-container {
+            width: 100%;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-sizing: border-box;
+            min-height: 400px;
+        }
+
+        #chart-container:empty::before {
+            content: "Loading chart...";
+            display: block;
+            text-align: center;
+            color: #666;
+            padding: 50px 20px;
+            font-style: italic;
+        }
+
+        .dot-row {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .acuity-label {
+            padding-right: 15px;
+            margin-right: 15px;
+            border-right: 1px solid;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 4px;
+            width: 150px;
+            flex-shrink: 0;
+            text-align: right;
+            height: 100%;
+        }
+
+        .dots-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: nowrap;
+            overflow: hidden;
+            padding: 5px 0;
+            gap: 10px;
+        }
+
+        .snellen-value {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .logmar-value {
+            font-size: 0.9em;
+        }
+
+        .dot-box {
+            position: relative;
+            display: inline-block;
+            border: 1px solid;
+            overflow: hidden;
+        }
+
+        .dot {
+            position: absolute;
+            border-radius: 50%;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            color: #ef4444;
+            background: #fef2f2;
+            border-radius: 8px;
+            margin: 20px;
+        }
+
+        /* Print Styles */
+        @media print {
+            @page {
+                size: A4;
+                margin: 15mm;
+            }
+
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+
+            .header,
+            .error-message {
+                display: none !important;
+            }
+
+            #chart-container {
+                padding: 0 !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+            }
+
+            .dot-row {
+                page-break-inside: avoid !important;
+            }
+
+            .acuity-label {
+                border-right-color: #000 !important;
+                color: #000 !important;
+            }
+
+            .snellen-value,
+            .logmar-value {
+                color: #000 !important;
+            }
+
+            .dot-box {
+                border-color: #000 !important;
+            }
+
+            .dot {
+                background-color: #000 !important;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Dot Visual Acuity Chart</h1>
+        <div class="header-buttons">
+            <button onclick="window.history.back()">← Back</button>
+            <button onclick="regenerateChart()">🔄 Refresh</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div id="chart-container"></div>
+    </div>
+
+    <script type="module">
+        import {
+            loadSettings,
+            calculateFontSize,
+            logMarToSnellen,
+            getContrastColor
+        } from './helpers/logmar3.js';
+
+        const chartContainer = document.getElementById('chart-container');
+
+        function generateRandomDots(boxSize, dotSize, numDots) {
+            const dots = [];
+            const padding = 2; // Small padding in points to keep dots well inside
+
+            for (let i = 0; i < numDots; i++) {
+                let attempts = 0;
+                let validPosition = false;
+                let x, y;
+
+                while (!validPosition && attempts < 200) {
+                    // Calculate available space for dot placement
+                    const maxX = boxSize - dotSize - padding;
+                    const maxY = boxSize - dotSize - padding;
+
+                    // Generate random position within safe boundaries
+                    x = padding + Math.random() * (maxX - padding);
+                    y = padding + Math.random() * (maxY - padding);
+
+                    // Additional safety clamp
+                    x = Math.max(padding, Math.min(x, maxX));
+                    y = Math.max(padding, Math.min(y, maxY));
+
+                    // Check if this position overlaps with existing dots
+                    validPosition = !dots.some(dot => {
+                        const dx = x - dot.x;
+                        const dy = y - dot.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        return distance < dotSize * 1.2; // Minimum spacing
+                    });
+
+                    attempts++;
+                }
+
+                if (validPosition) {
+                    dots.push({ x, y });
+                }
+            }
+
+            return dots;
+        }
+
+        function generateDotRow(logMAR, distance, scalingFactor, dotColor, backgroundColor, labelColor, distribution, nextRowFontSize) {
+            const row = document.createElement('div');
+            row.classList.add('dot-row');
+            row.style.backgroundColor = backgroundColor;
+
+            // Acuity Label
+            const labelDiv = document.createElement('div');
+            labelDiv.classList.add('acuity-label');
+            labelDiv.style.borderRightColor = labelColor;
+
+            const snellenSpan = document.createElement('span');
+            snellenSpan.classList.add('snellen-value');
+            snellenSpan.textContent = logMarToSnellen(logMAR, distance);
+            snellenSpan.style.color = labelColor;
+
+            const logmarSpan = document.createElement('span');
+            logmarSpan.classList.add('logmar-value');
+            logmarSpan.textContent = `LogMAR: ${logMAR.toFixed(1)}`;
+            logmarSpan.style.color = labelColor;
+
+            labelDiv.appendChild(snellenSpan);
+            labelDiv.appendChild(logmarSpan);
+
+            // Dots Container
+            const dotsContainer = document.createElement('div');
+            dotsContainer.classList.add('dots-container');
+
+            const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
+            const boxSize = fontSize * 5; // Box size same as letter height (5 strokes)
+            const dotSize = fontSize * 0.8; // Dot size
+
+            if (nextRowFontSize) {
+                const rowSpacing = nextRowFontSize * 0.75;
+                row.style.marginTop = `${rowSpacing}pt`;
+            }
+
+            // Determine number of boxes based on distribution
+            let numBoxes;
+            if (distribution === 'snellen') {
+                if (logMAR >= 0.8) numBoxes = 1;
+                else if (logMAR >= 0.6) numBoxes = 2;
+                else if (logMAR >= 0.4) numBoxes = 3;
+                else if (logMAR >= 0.2) numBoxes = 4;
+                else numBoxes = 5;
+            } else if (distribution === 'etdrs') {
+                numBoxes = 5;
+            } else if (distribution === 'linear') {
+                numBoxes = Math.max(1, Math.round((1.0 - logMAR) * 5) + 1);
+                numBoxes = Math.min(numBoxes, 6);
+            } else {
+                numBoxes = 5;
+            }
+
+            // Randomize number of dots per box
+            // Larger dots (logMAR >= 0.7) get max 3 dots, smaller dots get 1-5
+            let maxDots = logMAR >= 0.7 ? 3 : 5;
+            const dotsPerBox = Math.floor(Math.random() * maxDots) + 1;
+
+            // Create boxes with dots
+            for (let i = 0; i < numBoxes; i++) {
+                const dotBox = document.createElement('div');
+                dotBox.classList.add('dot-box');
+                dotBox.style.width = `${boxSize}pt`;
+                dotBox.style.height = `${boxSize}pt`;
+                dotBox.style.borderColor = dotColor;
+
+                // Generate random dot positions
+                const dots = generateRandomDots(boxSize, dotSize, dotsPerBox);
+
+                // Create dot elements
+                dots.forEach(pos => {
+                    const dot = document.createElement('div');
+                    dot.classList.add('dot');
+                    dot.style.width = `${dotSize}pt`;
+                    dot.style.height = `${dotSize}pt`;
+                    dot.style.backgroundColor = dotColor;
+                    dot.style.left = `${pos.x}pt`;
+                    dot.style.top = `${pos.y}pt`;
+                    dotBox.appendChild(dot);
+                });
+
+                dotsContainer.appendChild(dotBox);
+            }
+
+            row.appendChild(labelDiv);
+            row.appendChild(dotsContainer);
+            return row;
+        }
+
+        function loadAndDisplayChart() {
+            const result = loadSettings();
+
+            if (!result.success) {
+                chartContainer.innerHTML = `
+                    <div class="error-message">
+                        <h3>No Settings Found</h3>
+                        <p>Please configure chart settings first.</p>
+                        <button onclick="window.location.href='logmar-settings.html'">Go to Settings</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const settings = result.settings;
+            const distance = parseFloat(settings.distance) || 6;
+            const scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            const dotColor = settings.letterColor || '#000000';
+            const backgroundColor = settings.backgroundColor || '#ffffff';
+            const distribution = settings.distribution || 'etdrs';
+            const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+
+            // Validation
+            if (selectedRows.length === 0) {
+                chartContainer.innerHTML = '<p style="text-align:center; padding: 40px; color: #666;">No rows selected.</p>';
+                return;
+            }
+
+            chartContainer.style.backgroundColor = backgroundColor;
+            chartContainer.innerHTML = ''; // Clear previous chart
+
+            const sortedRows = [...selectedRows].sort((a, b) => b - a);
+            const fontSizes = sortedRows.map(logMAR => calculateFontSize(logMAR, distance, scalingFactor));
+            const labelColor = getContrastColor(backgroundColor);
+
+            sortedRows.forEach((logMAR, index) => {
+                const nextRowFontSize = index + 1 < fontSizes.length ? fontSizes[index + 1] : null;
+                const rowElement = generateDotRow(logMAR, distance, scalingFactor, dotColor, backgroundColor, labelColor, distribution, nextRowFontSize);
+                chartContainer.appendChild(rowElement);
+            });
+        }
+
+        window.regenerateChart = function () {
+            loadAndDisplayChart();
+        };
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            // F5 or Ctrl+R to refresh chart
+            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
+                e.preventDefault();
+                regenerateChart();
+            }
+            // Escape to go back
+            if (e.key === 'Escape') {
+                window.history.back();
+            }
+        });
+
+        // Load chart on page load
+        loadAndDisplayChart();
+    </script>
+</body>
+
+</html>

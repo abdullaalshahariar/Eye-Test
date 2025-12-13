@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Chart - Eye Clinic</title>
+    <link rel="stylesheet" href="chart-styles.css">
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --text-color: #dcddde;
+            --background-color: #1e1e1e;
+            --container-bg: #252525;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--background-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 20px 40px;
+            background: var(--container-bg);
+            border-bottom: 1px solid #2d2d2d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-color);
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            color: var(--text-color);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #3d3d3d;
+            border-color: var(--primary-color);
+        }
+
+        button.primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        button.primary:hover {
+            background: #6d28d9;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        #chart-container {
+            width: 100%;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-sizing: border-box;
+            min-height: 400px;
+        }
+
+        #chart-container:empty::before {
+            content: "Loading chart...";
+            display: block;
+            text-align: center;
+            color: #666;
+            padding: 50px 20px;
+            font-style: italic;
+        }
+
+        .number-row {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .acuity-label {
+            padding-right: 15px;
+            margin-right: 15px;
+            border-right: 1px solid;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 4px;
+            width: 150px;
+            flex-shrink: 0;
+            text-align: right;
+            height: 100%;
+        }
+
+        .letters-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: nowrap;
+            overflow: hidden;
+            padding: 5px 0;
+        }
+
+        .snellen-value {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .logmar-value {
+            font-size: 0.9em;
+        }
+
+        .number-letter {
+            font-family: 'Optician Sans', Arial, sans-serif;
+            font-weight: bold;
+            text-align: center;
+            flex: 0 0 auto;
+            padding: 0 0.2em;
+            line-height: 1;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            color: #ef4444;
+            background: #fef2f2;
+            border-radius: 8px;
+            margin: 20px;
+        }
+
+        /* Print Styles */
+        @media print {
+            @page {
+                size: A4;
+                margin: 15mm;
+            }
+
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+
+            .header,
+            .error-message {
+                display: none !important;
+            }
+
+            #chart-container {
+                padding: 0 !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+            }
+
+            .number-row {
+                page-break-inside: avoid !important;
+            }
+
+            .acuity-label {
+                border-right-color: #000 !important;
+                color: #000 !important;
+            }
+
+            .snellen-value,
+            .logmar-value {
+                color: #000 !important;
+            }
+
+            .number-letter {
+                color: #000 !important;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Number Visual Acuity Chart</h1>
+        <div class="header-buttons">
+            <button onclick="window.history.back()">← Back</button>
+            <button onclick="regenerateChart()">🔄 Refresh</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div id="chart-container"></div>
+    </div>
+
+    <script type="module">
+        import {
+            loadSettings,
+            calculateFontSize,
+            logMarToSnellen,
+            getContrastColor,
+            shuffleArray
+        } from './helpers/logmar3.js';
+
+        const chartContainer = document.getElementById('chart-container');
+
+        // Numbers 0-9
+        const NUMBERS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+        function generateNumberRow(logMAR, distance, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize) {
+            const row = document.createElement('div');
+            row.classList.add('number-row');
+            row.style.backgroundColor = backgroundColor;
+
+            // Acuity Label
+            const labelDiv = document.createElement('div');
+            labelDiv.classList.add('acuity-label');
+            labelDiv.style.borderRightColor = labelColor;
+
+            const snellenSpan = document.createElement('span');
+            snellenSpan.classList.add('snellen-value');
+            snellenSpan.textContent = logMarToSnellen(logMAR, distance);
+            snellenSpan.style.color = labelColor;
+
+            const logmarSpan = document.createElement('span');
+            logmarSpan.classList.add('logmar-value');
+            logmarSpan.textContent = `LogMAR: ${logMAR.toFixed(1)}`;
+            logmarSpan.style.color = labelColor;
+
+            labelDiv.appendChild(snellenSpan);
+            labelDiv.appendChild(logmarSpan);
+
+            // Letters Container
+            const lettersContainer = document.createElement('div');
+            lettersContainer.classList.add('letters-container');
+
+            const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
+
+            if (nextRowFontSize) {
+                const rowSpacing = nextRowFontSize * 0.75;
+                row.style.marginTop = `${rowSpacing}pt`;
+            }
+
+            // Determine letters per row based on distribution
+            let lettersPerRow;
+            if (distribution === 'snellen') {
+                if (logMAR >= 0.8) lettersPerRow = 1;
+                else if (logMAR >= 0.6) lettersPerRow = 2;
+                else if (logMAR >= 0.4) lettersPerRow = 3;
+                else if (logMAR >= 0.2) lettersPerRow = 4;
+                else lettersPerRow = 5;
+            } else if (distribution === 'etdrs') {
+                lettersPerRow = 5;
+            } else if (distribution === 'linear') {
+                lettersPerRow = Math.max(1, Math.round((1.0 - logMAR) * 5) + 1);
+                lettersPerRow = Math.min(lettersPerRow, 6);
+            } else {
+                lettersPerRow = 5;
+            }
+
+            // Create random numbers
+            const shuffledNumbers = shuffleArray([...NUMBERS]);
+            const numbersForRow = [];
+            for (let i = 0; i < lettersPerRow; i++) {
+                numbersForRow.push(shuffledNumbers[i % shuffledNumbers.length]);
+            }
+
+            numbersForRow.forEach(num => {
+                const numberSpan = document.createElement('span');
+                numberSpan.classList.add('number-letter');
+                numberSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
+                numberSpan.style.color = letterColor;
+                numberSpan.textContent = num;
+                lettersContainer.appendChild(numberSpan);
+            });
+
+            row.appendChild(labelDiv);
+            row.appendChild(lettersContainer);
+            return row;
+        }
+
+        function loadAndDisplayChart() {
+            const result = loadSettings();
+
+            if (!result.success) {
+                chartContainer.innerHTML = `
+                    <div class="error-message">
+                        <h3>No Settings Found</h3>
+                        <p>Please configure chart settings first.</p>
+                        <button onclick="window.location.href='logmar-settings.html'">Go to Settings</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const settings = result.settings;
+            const distance = parseFloat(settings.distance) || 6;
+            const scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            const letterColor = settings.letterColor || '#000000';
+            const backgroundColor = settings.backgroundColor || '#ffffff';
+            const distribution = settings.distribution || 'etdrs';
+            const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+
+            // Validation
+            if (selectedRows.length === 0) {
+                chartContainer.innerHTML = '<p style="text-align:center; padding: 40px; color: #666;">No rows selected.</p>';
+                return;
+            }
+
+            chartContainer.style.backgroundColor = backgroundColor;
+            chartContainer.innerHTML = ''; // Clear previous chart
+
+            const sortedRows = [...selectedRows].sort((a, b) => b - a);
+            const fontSizes = sortedRows.map(logMAR => calculateFontSize(logMAR, distance, scalingFactor));
+            const labelColor = getContrastColor(backgroundColor);
+
+            sortedRows.forEach((logMAR, index) => {
+                const nextRowFontSize = index + 1 < fontSizes.length ? fontSizes[index + 1] : null;
+                const rowElement = generateNumberRow(logMAR, distance, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize);
+                chartContainer.appendChild(rowElement);
+            });
+        }
+
+        window.regenerateChart = function () {
+            loadAndDisplayChart();
+        };
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            // F5 or Ctrl+R to refresh chart
+            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
+                e.preventDefault();
+                regenerateChart();
+            }
+            // Escape to go back
+            if (e.key === 'Escape') {
+                window.history.back();
+            }
+        });
+
+        // Load chart on page load
+        loadAndDisplayChart();
+    </script>
+</body>
+
+</html>

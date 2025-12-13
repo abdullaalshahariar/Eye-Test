@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worth 4 Dot Test - Eye Clinic</title>
+    <link rel="stylesheet" href="chart-styles.css">
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --text-color: #dcddde;
+            --background-color: #1e1e1e;
+            --container-bg: #252525;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--background-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 20px 40px;
+            background: var(--container-bg);
+            border-bottom: 1px solid #2d2d2d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-color);
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            color: var(--text-color);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #3d3d3d;
+            border-color: var(--primary-color);
+        }
+
+        button.primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        button.primary:hover {
+            background: #6d28d9;
+        }
+
+        .content {
+            flex: 1;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000000;
+        }
+
+        #test-container {
+            background: #000000;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dots-pattern {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dot {
+            position: absolute;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .dot.red {
+            background-color: #FF0000;
+        }
+
+        .dot.green {
+            background-color: #00FF00;
+        }
+
+        .dot.white {
+            background-color: #FFFFFF;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            color: #ef4444;
+            background: #fef2f2;
+            border-radius: 8px;
+            margin: 20px;
+        }
+
+        /* Print Styles */
+        @media print {
+            @page {
+                size: A4;
+                margin: 15mm;
+            }
+
+            body {
+                background: #000 !important;
+                color: #fff !important;
+            }
+
+            .header,
+            .error-message,
+            .info-panel {
+                display: none !important;
+            }
+
+            #test-container {
+                min-width: 100%;
+                min-height: 100vh;
+                padding: 40px;
+                border-radius: 0;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Worth 4 Dot Test</h1>
+        <div class="header-buttons">
+            <button onclick="window.history.back()">← Back</button>
+            <button onclick="increaseSize()">+ Larger</button>
+            <button onclick="decreaseSize()">- Smaller</button>
+            <button onclick="regenerateTest()">🔄 Rotate</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div id="test-container">
+            <div class="dots-pattern" id="dots-pattern"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import {
+            loadSettings,
+            calculateFontSize,
+            logMarToSnellen
+        } from './helpers/logmar3.js';
+
+        const dotsPattern = document.getElementById('dots-pattern');
+
+        // LogMAR values for size control
+        const logmarValues = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0, -0.1, -0.2, -0.3];
+        let currentLogmarIndex = 7; // Start at 0.3 (6/12)
+        let currentRotation = 0;
+
+        function generateWorth4Dots() {
+            const result = loadSettings();
+            let distance = 6;
+            let scalingFactor = 1.0;
+
+            if (result.success) {
+                const settings = result.settings;
+                distance = parseFloat(settings.distance) || 6;
+                scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            }
+
+            const currentLogmar = logmarValues[currentLogmarIndex];
+            const fontSize = calculateFontSize(currentLogmar, distance, scalingFactor);
+            const dotSize = fontSize * 3; // Dot size is 3x letter height
+            // Clear previous dots
+            dotsPattern.innerHTML = '';
+
+            // Calculate available space (accounting for some margin)
+            const containerWidth = dotsPattern.clientWidth;
+            const containerHeight = dotsPattern.clientHeight;
+            const minDimension = Math.min(containerWidth, containerHeight);
+
+            // Distance from center - ensure dots fit within container
+            const maxDistance = (minDimension / 2) - dotSize - 40; // 40px margin
+            const distanceFromCenter = Math.min(dotSize * 2, maxDistance);
+
+            // Create 4 dots in diamond pattern
+            const dots = [
+                { color: 'red', angle: 0 },      // Top
+                { color: 'green', angle: 90 },   // Right
+                { color: 'white', angle: 180 },  // Bottom
+                { color: 'green', angle: 270 }   // Left
+            ];
+
+            dots.forEach(dotConfig => {
+                const dot = document.createElement('div');
+                dot.classList.add('dot', dotConfig.color);
+                dot.style.width = `${dotSize}pt`;
+                dot.style.height = `${dotSize}pt`;
+
+                // Calculate position with rotation
+                const totalAngle = (dotConfig.angle + currentRotation) * (Math.PI / 180);
+                const x = Math.cos(totalAngle) * distanceFromCenter;
+                const y = Math.sin(totalAngle) * distanceFromCenter;
+
+                // Position relative to center (using transform)
+                dot.style.left = '50%';
+                dot.style.top = '50%';
+                dot.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+
+                dotsPattern.appendChild(dot);
+            });
+        }
+
+        window.increaseSize = function () {
+            if (currentLogmarIndex > 0) {
+                currentLogmarIndex--;
+                generateWorth4Dots();
+            }
+        };
+
+        window.decreaseSize = function () {
+            if (currentLogmarIndex < logmarValues.length - 1) {
+                currentLogmarIndex++;
+                generateWorth4Dots();
+            }
+        };
+
+        window.regenerateTest = function () {
+            // Change rotation
+            const rotations = [0, 90, 180, 270];
+            const currentIndex = rotations.indexOf(currentRotation);
+            const nextIndex = (currentIndex + 1) % rotations.length;
+            currentRotation = rotations[nextIndex];
+            generateWorth4Dots();
+        };
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            // Arrow Up or + to increase size
+            if (e.key === 'ArrowUp' || e.key === '+' || e.key === '=') {
+                e.preventDefault();
+                increaseSize();
+            }
+            // Arrow Down or - to decrease size
+            if (e.key === 'ArrowDown' || e.key === '-') {
+                e.preventDefault();
+                decreaseSize();
+            }
+            // F5 or Ctrl+R to rotate
+            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
+                e.preventDefault();
+                regenerateTest();
+            }
+            // Space to rotate
+            if (e.key === ' ') {
+                e.preventDefault();
+                regenerateTest();
+            }
+            // Escape to go back
+            if (e.key === 'Escape') {
+                window.history.back();
+            }
+        });
+
+        // Regenerate on window resize to ensure proper fitting
+        window.addEventListener('resize', generateWorth4Dots);
+
+        // Generate test on page load
+        setTimeout(generateWorth4Dots, 100); // Small delay to ensure container is sized
+    </script>
+</body>
+
+</html>

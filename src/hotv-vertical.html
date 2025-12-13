@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTV Vertical Lines - Eye Clinic</title>
+    <link rel="stylesheet" href="chart-styles.css">
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --text-color: #dcddde;
+            --background-color: #1e1e1e;
+            --container-bg: #252525;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--background-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 20px 40px;
+            background: var(--container-bg);
+            border-bottom: 1px solid #2d2d2d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-color);
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            color: var(--text-color);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #3d3d3d;
+            border-color: var(--primary-color);
+        }
+
+        button.primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        button.primary:hover {
+            background: #6d28d9;
+        }
+
+        .content {
+            flex: 1;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+        }
+
+        #test-container {
+            background: white;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Vertical Display */
+        .vertical-display {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            width: 100%;
+            height: 100%;
+            padding: 40px;
+            box-sizing: border-box;
+            gap: 0;
+        }
+
+        .letter-row {
+            display: flex;
+            width: 100%;
+            align-items: center;
+        }
+
+        .acuity-label {
+            padding-right: 15px;
+            margin-right: 15px;
+            border-right: 1px solid #000;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 4px;
+            width: 150px;
+            flex-shrink: 0;
+            text-align: right;
+        }
+
+        .letters-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .snellen-value {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .logmar-value {
+            font-size: 0.75em;
+            color: #333;
+        }
+
+        .hotv-letter {
+            font-family: 'Optician Sans', Arial, sans-serif;
+            font-weight: bold;
+            color: #000000;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media print {
+            .header {
+                display: none !important;
+            }
+
+            #test-container {
+                width: 100%;
+                height: 100vh;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>HOTV Vertical Lines</h1>
+        <div class="header-buttons" id="header-buttons">
+            <!-- Dynamic buttons will be inserted here -->
+        </div>
+    </div>
+
+    <div class="content">
+        <div id="test-container">
+            <div id="display-area"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import {
+            loadSettings,
+            calculateFontSize,
+            logMarToSnellen
+        } from './helpers/logmar3.js';
+
+        const displayArea = document.getElementById('display-area');
+        const headerButtons = document.getElementById('header-buttons');
+
+        // LogMAR values to display (all rows)
+        const logmarValues = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0, -0.1, -0.2, -0.3];
+
+        let distance = 6;
+        let scalingFactor = 1.0;
+
+        function loadCurrentSettings() {
+            const result = loadSettings();
+            if (result.success) {
+                const settings = result.settings;
+                distance = parseFloat(settings.distance) || 6;
+                scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            }
+        }
+
+        function updateButtons() {
+            headerButtons.innerHTML = '';
+
+            const backBtn = document.createElement('button');
+            backBtn.textContent = '← Back';
+            backBtn.onclick = () => {
+                window.history.back();
+            };
+            headerButtons.appendChild(backBtn);
+
+            const refreshBtn = document.createElement('button');
+            refreshBtn.textContent = '🔄 Refresh';
+            refreshBtn.onclick = () => {
+                renderVerticalLines();
+            };
+            headerButtons.appendChild(refreshBtn);
+        }
+
+        function renderVerticalLines() {
+            displayArea.innerHTML = '';
+            displayArea.className = '';
+
+            const verticalDiv = document.createElement('div');
+            verticalDiv.className = 'vertical-display';
+
+            const availableLetters = ['C', 'D', 'E', 'F', 'L', 'O', 'P', 'T', 'Z', 'H', 'N', 'R', 'U', 'V', 'K', 'S'];
+
+            // Create a row for each LogMAR value
+            logmarValues.forEach((logmar, index) => {
+                const fontSize = calculateFontSize(logmar, distance, scalingFactor);
+
+                // Add spacing between rows based on next row's font size
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'letter-row';
+
+                if (index > 0) {
+                    const prevFontSize = calculateFontSize(logmarValues[index - 1], distance, scalingFactor);
+                    rowDiv.style.marginTop = `${prevFontSize * 0.5}pt`;
+                }
+
+                // Acuity Label
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'acuity-label';
+
+                const snellenSpan = document.createElement('span');
+                snellenSpan.className = 'snellen-value';
+                snellenSpan.textContent = logMarToSnellen(logmar, distance);
+
+                const logmarSpan = document.createElement('span');
+                logmarSpan.className = 'logmar-value';
+                logmarSpan.textContent = `LogMAR: ${logmar.toFixed(1)}`;
+
+                labelDiv.appendChild(snellenSpan);
+                labelDiv.appendChild(logmarSpan);
+
+                // Letters Container with single letter
+                const lettersContainer = document.createElement('div');
+                lettersContainer.className = 'letters-container';
+
+                // Pick a random letter for this row
+                const randomLetter = availableLetters[Math.floor(Math.random() * availableLetters.length)];
+
+                const letterSpan = document.createElement('span');
+                letterSpan.className = 'hotv-letter';
+                letterSpan.textContent = randomLetter;
+                letterSpan.style.fontSize = `${fontSize}pt`;
+
+                lettersContainer.appendChild(letterSpan);
+                rowDiv.appendChild(labelDiv);
+                rowDiv.appendChild(lettersContainer);
+                verticalDiv.appendChild(rowDiv);
+            });
+
+            displayArea.appendChild(verticalDiv);
+        }
+
+        function init() {
+            loadCurrentSettings();
+            updateButtons();
+            renderVerticalLines();
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            // F5 or Ctrl+R to refresh
+            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
+                e.preventDefault();
+                renderVerticalLines();
+            }
+            // Escape to go back
+            if (e.key === 'Escape') {
+                window.history.back();
+            }
+        });
+
+        // Regenerate on window resize
+        window.addEventListener('resize', () => {
+            renderVerticalLines();
+        });
+
+        // Initial render
+        setTimeout(() => init(), 100);
+    </script>
+</body>
+
+</html>

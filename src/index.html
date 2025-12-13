@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eye Clinic</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1e1e1e;
+            height: 100vh;
+            overflow: hidden;
+            color: #dcddde;
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #1e1e1e;
+            z-index: 1000;
+        }
+
+        .welcome-screen.animate {
+            animation: fadeOut 1s ease-in 2s forwards;
+        }
+
+        .welcome-screen h1 {
+            font-size: 3.5rem;
+            font-weight: 600;
+            color: #d4d4d4;
+            letter-spacing: -0.5px;
+        }
+
+        .welcome-screen.animate h1 {
+            animation: fadeIn 1s ease-in;
+        }
+
+        .welcome-screen .footer {
+            position: absolute;
+            bottom: 20px;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+
+        /* Main App */
+        .app-container {
+            opacity: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-container.animate {
+            animation: fadeIn 1s ease-in 3s forwards;
+        }
+
+        .app-container.no-animate {
+            opacity: 1;
+        }
+
+        .welcome-screen.hide {
+            display: none;
+        }
+
+        /* Header */
+        .header {
+            padding: 20px 40px;
+            background: #252525;
+            border-bottom: 1px solid #2d2d2d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #d4d4d4;
+        }
+
+        .settings-btn {
+            background: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            color: #dcddde;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .settings-btn:hover {
+            background: #3d3d3d;
+            border-color: #4d4d4d;
+        }
+
+        /* Menu Container */
+        .menu-container {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Menu Cards */
+        .menu-card {
+            background: #252525;
+            border: 1px solid #2d2d2d;
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-card:hover {
+            background: #2d2d2d;
+            border-color: #7c3aed;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+        }
+
+        .menu-card:focus {
+            outline: 2px solid #7c3aed;
+            outline-offset: 2px;
+        }
+
+        .menu-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .menu-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #d4d4d4;
+            margin-bottom: 8px;
+        }
+
+        .menu-card p {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        /* Scrollbar */
+        .menu-container::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .menu-container::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+
+        .menu-container::-webkit-scrollbar-thumb {
+            background: #3d3d3d;
+            border-radius: 5px;
+        }
+
+        .menu-container::-webkit-scrollbar-thumb:hover {
+            background: #4d4d4d;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Welcome Screen -->
+    <div class="welcome-screen">
+        <h1>Welcome to Eye Clinic</h1>
+        <div class="footer">
+            <p>Created by Optometrist Md Ismail Hossain</p>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div class="app-container">
+        <div class="header">
+            <h2>Eye Clinic Tests</h2>
+            <button class="settings-btn">⚙️ Settings</button>
+        </div>
+
+        <div class="menu-container">
+            <div class="menu-grid">
+                <div class="menu-card" tabindex="0" onclick="window.location.href='logmar3.html'">
+                    <div class="icon">📊</div>
+                    <h3>LogMAR Chart</h3>
+                    <p>Logarithmic visual acuity test</p>
+                </div>
+
+                <div class="menu-card" tabindex="0" onclick="window.location.href='alphabet-chart.html'">
+                    <div class="icon">🔤</div>
+                    <h3>Alphabet Chart</h3>
+                    <p>Standard letter-based vision test</p>
+                </div>
+
+                <div class="menu-card" tabindex="0" onclick="window.location.href='e-chart.html'">
+                    <div class="icon">E</div>
+                    <h3>E Chart</h3>
+                    <p>Tumbling E vision test</p>
+                </div>
+
+                <div class="menu-card" tabindex="0" onclick="window.location.href='c-chart.html'">
+                    <div class="icon">⭕</div>
+                    <h3>C (Ring) Chart</h3>
+                    <p>Landolt C vision test</p>
+                </div>
+
+                <div class="menu-card" tabindex="0" onclick="window.location.href='dot-chart.html'">
+                    <div class="icon">⚫</div>
+                    <h3>Dot Chart</h3>
+                    <p>Dot-based visual acuity test</p>
+                </div>
+
+                <div class="menu-card" tabindex="0" onclick="window.location.href='number-chart.html'">
+                    <div class="icon">🔢</div>
+                    <h3>Number Chart</h3>
+                    <p>Numeric vision assessment</p>
+                </div>
+
+                <div class="menu-card" tabindex="0" onclick="window.location.href='pediatric-chart.html'">
+                    <div class="icon">👶</div>
+                    <h3>Pediatric Chart</h3>
+                    <p>Child-friendly vision test</p>
+                </div>
+
+                <div class="menu-card" tabindex="0" onclick="window.location.href='hotv-test.html'">
+                    <div class="icon">🔤</div>
+                    <h3>HOTV Test</h3>
+                    <p>Pediatric letter matching test</p>
+                </div>
+
+                <div class="menu-card" tabindex="0" onclick="window.location.href='duochrome-test.html'">
+                    <div class="icon">🔴🟢</div>
+                    <h3>Duochrome Test</h3>
+                    <p>Red-green refraction test</p>
+                </div>
+
+                <div class="menu-card" tabindex="0" onclick="window.location.href='worth-4-dot.html'">
+                    <div class="icon">🔴🟢⚪🟢</div>
+                    <h3>Worth 4 Dot Test</h3>
+                    <p>Binocular vision assessment</p>
+                </div>
+
+                <div class="menu-card" tabindex="0" onclick="window.location.href='astigmatism-chart.html'">
+                    <div class="icon">📐</div>
+                    <h3>Astigmatism Axis Chart</h3>
+                    <p>Detect astigmatism orientation</p>
+                </div>
+
+                <div class="menu-card" tabindex="0" onclick="window.location.href='amsler-grid.html'">
+                    <div class="icon">📏</div>
+                    <h3>Amsler Grid Test</h3>
+                    <p>Macular degeneration screening</p>
+                </div>
+
+                <div class="menu-card" tabindex="0" onclick="window.location.href='ishihara-test.html'">
+                    <div class="icon">🌈</div>
+                    <h3>Ishihara Color Test</h3>
+                    <p>38 plates - Color blindness assessment</p>
+                </div>
+
+                <div class="menu-card" tabindex="0" onclick="window.location.href='animation-player.html'">
+                    <div class="icon">🎬</div>
+                    <h3>Animation</h3>
+                    <p>Interactive eye exercises</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add keyboard navigation support
+        document.addEventListener('DOMContentLoaded', function () {
+            const welcomeScreen = document.querySelector('.welcome-screen');
+            const appContainer = document.querySelector('.app-container');
+
+            // Check if animation has been played in this session using sessionStorage
+            const animationPlayed = sessionStorage.getItem('animationPlayed');
+
+            if (!animationPlayed) {
+                // First time - play animation
+                welcomeScreen.classList.add('animate');
+                appContainer.classList.add('animate');
+                // Mark as played in sessionStorage (persists across page navigations but not app restarts)
+                sessionStorage.setItem('animationPlayed', 'true');
+            } else {
+                // Already played - skip animation
+                welcomeScreen.classList.add('hide');
+                appContainer.classList.add('no-animate');
+            }
+
+            const cards = document.querySelectorAll('.menu-card');
+
+            cards.forEach(card => {
+                card.addEventListener('click', function () {
+                    const testName = this.querySelector('h3').textContent;
+                    console.log('Selected test:', testName);
+                    // TODO: Navigate to test screen
+                });
+
+                card.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        this.click();
+                    }
+                });
+            });
+
+            // Settings button
+            document.querySelector('.settings-btn').addEventListener('click', function () {
+                window.location.href = 'logmar-settings.html';
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function (e) {
+                // Ctrl+S or Cmd+S for Settings
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    window.location.href = 'logmar-settings.html';
+                }
+                // Escape to go back (if not on main menu)
+                if (e.key === 'Escape' && window.location.pathname.includes('logmar')) {
+                    window.history.back();
+                }
+            });
+
+            // Arrow key navigation
+            let currentFocus = 0;
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'ArrowRight') {
+                    currentFocus = (currentFocus + 1) % cards.length;
+                    cards[currentFocus].focus();
+                } else if (e.key === 'ArrowLeft') {
+                    currentFocus = (currentFocus - 1 + cards.length) % cards.length;
+                    cards[currentFocus].focus();
+                } else if (e.key === 'ArrowDown') {
+                    currentFocus = Math.min(currentFocus + 4, cards.length - 1);
+                    cards[currentFocus].focus();
+                } else if (e.key === 'ArrowUp') {
+                    currentFocus = Math.max(currentFocus - 4, 0);
+                    cards[currentFocus].focus();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

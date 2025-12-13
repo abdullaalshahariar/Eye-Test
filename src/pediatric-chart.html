@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pediatric Chart - Eye Clinic</title>
+    <link rel="stylesheet" href="chart-styles.css">
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --text-color: #dcddde;
+            --background-color: #1e1e1e;
+            --container-bg: #252525;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--background-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 20px 40px;
+            background: var(--container-bg);
+            border-bottom: 1px solid #2d2d2d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-color);
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            color: var(--text-color);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #3d3d3d;
+            border-color: var(--primary-color);
+        }
+
+        button.primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        button.primary:hover {
+            background: #6d28d9;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        #chart-container {
+            width: 100%;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-sizing: border-box;
+            min-height: 400px;
+        }
+
+        .symbol-row {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            justify-content: flex-start;
+            margin-bottom: 5px;
+        }
+
+        .acuity-label {
+            padding-right: 15px;
+            margin-right: 15px;
+            border-right: 1px solid;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 4px;
+            width: 150px;
+            flex-shrink: 0;
+            text-align: right;
+            height: 100%;
+        }
+
+        .symbols-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            gap: 10px;
+            flex-wrap: nowrap;
+        }
+
+        .snellen-value {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .logmar-value {
+            font-size: 0.9em;
+        }
+
+        .symbol-shape {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            color: #ef4444;
+            background: #fef2f2;
+            border-radius: 8px;
+            margin: 20px;
+        }
+
+        /* SVG shapes */
+        svg {
+            display: block;
+        }
+
+        /* Print Styles */
+        @media print {
+            @page {
+                size: A4;
+                margin: 15mm;
+            }
+
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+
+            .header,
+            .error-message {
+                display: none !important;
+            }
+
+            #chart-container {
+                padding: 0 !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+            }
+
+            .symbol-row {
+                page-break-inside: avoid !important;
+            }
+
+            .acuity-label {
+                border-right-color: #000 !important;
+                color: #000 !important;
+            }
+
+            .snellen-value,
+            .logmar-value {
+                color: #000 !important;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Pediatric Visual Acuity Chart</h1>
+        <div class="header-buttons">
+            <button onclick="window.history.back()">← Back</button>
+            <button onclick="regenerateChart()">🔄 Refresh</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div id="chart-container"></div>
+    </div>
+
+    <script type="module">
+        import {
+            loadSettings,
+            calculateFontSize,
+            logMarToSnellen,
+            getContrastColor,
+            shuffleArray
+        } from './helpers/logmar3.js';
+
+        const chartContainer = document.getElementById('chart-container');
+
+        // Pediatric symbols - simple shapes that children can recognize
+        const SYMBOLS = [
+            { name: 'circle', draw: drawCircle },
+            { name: 'square', draw: drawSquare },
+            { name: 'star', draw: drawStar },
+            { name: 'heart', draw: drawHeart },
+            { name: 'triangle', draw: drawTriangle },
+            { name: 'house', draw: drawHouse }
+        ];
+
+        function drawCircle(svg, size, color) {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', size / 2);
+            circle.setAttribute('cy', size / 2);
+            circle.setAttribute('r', size / 2.5);
+            circle.setAttribute('fill', 'none');
+            circle.setAttribute('stroke', color);
+            circle.setAttribute('stroke-width', size / 15);
+            svg.appendChild(circle);
+        }
+
+        function drawSquare(svg, size, color) {
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            const rectSize = size / 1.4;
+            const offset = (size - rectSize) / 2;
+            rect.setAttribute('x', offset);
+            rect.setAttribute('y', offset);
+            rect.setAttribute('width', rectSize);
+            rect.setAttribute('height', rectSize);
+            rect.setAttribute('fill', 'none');
+            rect.setAttribute('stroke', color);
+            rect.setAttribute('stroke-width', size / 15);
+            svg.appendChild(rect);
+        }
+
+        function drawTriangle(svg, size, color) {
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const height = size / 1.4;
+            const topY = (size - height) / 2;
+            const bottomY = topY + height;
+            const centerX = size / 2;
+            const halfBase = height / 1.73; // equilateral triangle ratio
+
+            const points = `${centerX},${topY} ${centerX - halfBase},${bottomY} ${centerX + halfBase},${bottomY}`;
+            polygon.setAttribute('points', points);
+            polygon.setAttribute('fill', 'none');
+            polygon.setAttribute('stroke', color);
+            polygon.setAttribute('stroke-width', size / 15);
+            svg.appendChild(polygon);
+        }
+
+        function drawStar(svg, size, color) {
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const cx = size / 2;
+            const cy = size / 2;
+            const outerRadius = size / 2.5;
+            const innerRadius = outerRadius / 2.5;
+            const points = [];
+
+            for (let i = 0; i < 10; i++) {
+                const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                const angle = (i * Math.PI) / 5 - Math.PI / 2;
+                const x = cx + radius * Math.cos(angle);
+                const y = cy + radius * Math.sin(angle);
+                points.push(`${x},${y}`);
+            }
+
+            polygon.setAttribute('points', points.join(' '));
+            polygon.setAttribute('fill', 'none');
+            polygon.setAttribute('stroke', color);
+            polygon.setAttribute('stroke-width', size / 15);
+            svg.appendChild(polygon);
+        }
+
+        function drawHeart(svg, size, color) {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const scale = size / 100;
+            const offsetX = size / 2;
+            const offsetY = size / 2;
+
+            // Heart shape path
+            const d = `M ${offsetX} ${offsetY + 10 * scale}
+                       C ${offsetX} ${offsetY - 5 * scale}, ${offsetX - 25 * scale} ${offsetY - 15 * scale}, ${offsetX - 25 * scale} ${offsetY - 25 * scale}
+                       C ${offsetX - 25 * scale} ${offsetY - 35 * scale}, ${offsetX} ${offsetY - 35 * scale}, ${offsetX} ${offsetY - 25 * scale}
+                       C ${offsetX} ${offsetY - 35 * scale}, ${offsetX + 25 * scale} ${offsetY - 35 * scale}, ${offsetX + 25 * scale} ${offsetY - 25 * scale}
+                       C ${offsetX + 25 * scale} ${offsetY - 15 * scale}, ${offsetX} ${offsetY - 5 * scale}, ${offsetX} ${offsetY + 10 * scale} Z`;
+
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', color);
+            path.setAttribute('stroke-width', size / 15);
+            svg.appendChild(path);
+        }
+
+        function drawHouse(svg, size, color) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+            // Roof (triangle)
+            const roof = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const roofHeight = size / 3;
+            const roofTop = size / 4;
+            const roofBottom = roofTop + roofHeight;
+            const centerX = size / 2;
+            const baseWidth = size / 1.6;
+
+            roof.setAttribute('points', `${centerX},${roofTop} ${centerX - baseWidth / 2},${roofBottom} ${centerX + baseWidth / 2},${roofBottom}`);
+            roof.setAttribute('fill', 'none');
+            roof.setAttribute('stroke', color);
+            roof.setAttribute('stroke-width', size / 15);
+            g.appendChild(roof);
+
+            // House base (rectangle)
+            const base = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            const baseHeight = size / 2.5;
+            base.setAttribute('x', centerX - baseWidth / 2);
+            base.setAttribute('y', roofBottom);
+            base.setAttribute('width', baseWidth);
+            base.setAttribute('height', baseHeight);
+            base.setAttribute('fill', 'none');
+            base.setAttribute('stroke', color);
+            base.setAttribute('stroke-width', size / 15);
+            g.appendChild(base);
+
+            svg.appendChild(g);
+        }
+
+        function createSymbol(symbolDef, size, color) {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', size);
+            svg.setAttribute('height', size);
+            svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+
+            symbolDef.draw(svg, size, color);
+
+            return svg;
+        }
+
+        function generateSymbolRow(logMAR, distance, scalingFactor, symbolColor, backgroundColor, labelColor, distribution, nextRowFontSize) {
+            const row = document.createElement('div');
+            row.classList.add('symbol-row');
+            row.style.backgroundColor = backgroundColor;
+
+            // Acuity Label
+            const labelDiv = document.createElement('div');
+            labelDiv.classList.add('acuity-label');
+            labelDiv.style.borderRightColor = labelColor;
+
+            const snellenSpan = document.createElement('span');
+            snellenSpan.classList.add('snellen-value');
+            snellenSpan.textContent = logMarToSnellen(logMAR, distance);
+            snellenSpan.style.color = labelColor;
+
+            const logmarSpan = document.createElement('span');
+            logmarSpan.classList.add('logmar-value');
+            logmarSpan.textContent = `LogMAR: ${logMAR.toFixed(1)}`;
+            logmarSpan.style.color = labelColor;
+
+            labelDiv.appendChild(snellenSpan);
+            labelDiv.appendChild(logmarSpan);
+
+            // Symbols Container
+            const symbolsContainer = document.createElement('div');
+            symbolsContainer.classList.add('symbols-container');
+
+            const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
+            const symbolSize = fontSize * 5; // Same as letter height
+
+            if (nextRowFontSize) {
+                const rowSpacing = nextRowFontSize * 0.75;
+                row.style.marginTop = `${rowSpacing}pt`;
+            }
+
+            // Determine number of symbols based on distribution
+            let numSymbols;
+            if (distribution === 'snellen') {
+                if (logMAR >= 0.8) numSymbols = 1;
+                else if (logMAR >= 0.6) numSymbols = 2;
+                else if (logMAR >= 0.4) numSymbols = 3;
+                else if (logMAR >= 0.2) numSymbols = 4;
+                else numSymbols = 5;
+            } else if (distribution === 'etdrs') {
+                numSymbols = 5;
+            } else if (distribution === 'linear') {
+                numSymbols = Math.max(1, Math.round((1.0 - logMAR) * 5) + 1);
+                numSymbols = Math.min(numSymbols, 6);
+            } else {
+                numSymbols = 5;
+            }
+
+            // Shuffle and select symbols
+            const shuffledSymbols = shuffleArray([...SYMBOLS]);
+            const selectedSymbols = shuffledSymbols.slice(0, numSymbols);
+
+            // Create symbol elements
+            selectedSymbols.forEach(symbolDef => {
+                const symbolWrapper = document.createElement('div');
+                symbolWrapper.classList.add('symbol-shape');
+
+                const svg = createSymbol(symbolDef, symbolSize, symbolColor);
+                symbolWrapper.appendChild(svg);
+                symbolsContainer.appendChild(symbolWrapper);
+            });
+
+            row.appendChild(labelDiv);
+            row.appendChild(symbolsContainer);
+            return row;
+        }
+
+        function loadAndDisplayChart() {
+            const result = loadSettings();
+
+            if (!result.success) {
+                chartContainer.innerHTML = `
+                    <div class="error-message">
+                        <h3>No Settings Found</h3>
+                        <p>Please configure chart settings first.</p>
+                        <button onclick="window.location.href='logmar-settings.html'">Go to Settings</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const settings = result.settings;
+            const distance = parseFloat(settings.distance) || 6;
+            const scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            const symbolColor = settings.letterColor || '#000000';
+            const backgroundColor = settings.backgroundColor || '#ffffff';
+            const distribution = settings.distribution || 'etdrs';
+            const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+
+            // Validation
+            if (selectedRows.length === 0) {
+                chartContainer.innerHTML = '<p style="text-align:center; padding: 40px; color: #666;">No rows selected.</p>';
+                return;
+            }
+
+            chartContainer.style.backgroundColor = backgroundColor;
+            chartContainer.innerHTML = ''; // Clear previous chart
+
+            const sortedRows = [...selectedRows].sort((a, b) => b - a);
+            const fontSizes = sortedRows.map(logMAR => calculateFontSize(logMAR, distance, scalingFactor));
+            const labelColor = getContrastColor(backgroundColor);
+
+            sortedRows.forEach((logMAR, index) => {
+                const nextRowFontSize = index + 1 < fontSizes.length ? fontSizes[index + 1] : null;
+                const rowElement = generateSymbolRow(logMAR, distance, scalingFactor, symbolColor, backgroundColor, labelColor, distribution, nextRowFontSize);
+                chartContainer.appendChild(rowElement);
+            });
+        }
+
+        window.regenerateChart = function () {
+            loadAndDisplayChart();
+        };
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            // Ctrl+S to go to settings
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                window.location.href = 'logmar-settings.html';
+            }
+            // F5 or Ctrl+R to refresh chart
+            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
+                e.preventDefault();
+                regenerateChart();
+            }
+            // Escape to go back
+            if (e.key === 'Escape') {
+                window.history.back();
+            }
+        });
+
+        // Load chart on page load
+        loadAndDisplayChart();
+    </script>
+</body>
+
+</html>
