@@ -293,6 +293,8 @@
                 numberSpan.classList.add('number-letter');
                 numberSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
                 numberSpan.style.color = letterColor;
+                numberSpan.style.transform = 'scaleY(1.25)'; // Make numbers square (5:5 ratio)
+                numberSpan.style.display = 'inline-block';
                 numberSpan.textContent = num;
                 lettersContainer.appendChild(numberSpan);
             });

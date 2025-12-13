@@ -237,6 +237,8 @@
             letterSpan.className = 'single-letter';
             letterSpan.textContent = randomLetter;
             letterSpan.style.fontSize = `${fontSize}pt`;
+            letterSpan.style.transform = 'scaleY(1.25)'; // Make letters square (5:5 ratio)
+            letterSpan.style.display = 'inline-block';
 
             singleDiv.appendChild(letterSpan);
             displayArea.appendChild(singleDiv);

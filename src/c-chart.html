@@ -293,9 +293,9 @@
                 letterSpan.style.color = letterColor;
                 letterSpan.textContent = 'C';
 
-                // Apply random rotation
+                // Apply random rotation and make square (5:5 ratio)
                 const rotation = getRandomOrientation();
-                letterSpan.style.transform = `rotate(${rotation}deg)`;
+                letterSpan.style.transform = `rotate(${rotation}deg) scaleY(1.25)`;
                 letterSpan.style.display = 'inline-block'; // Required for transform to work
 
                 lettersContainer.appendChild(letterSpan);
