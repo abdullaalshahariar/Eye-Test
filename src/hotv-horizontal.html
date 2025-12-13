@@ -218,6 +218,12 @@
         function updateButtons() {
             headerButtons.innerHTML = '';
 
+            const duochromeBtn = document.createElement('button');
+            duochromeBtn.id = 'duochrome-toggle';
+            duochromeBtn.textContent = '🔴🟢 Duochrome: OFF';
+            duochromeBtn.onclick = toggleDuochrome;
+            headerButtons.appendChild(duochromeBtn);
+
             const backBtn = document.createElement('button');
             backBtn.textContent = '← Back';
             backBtn.onclick = () => {
@@ -240,7 +246,26 @@
             refreshBtn.onclick = () => {
                 renderHorizontalLine();
             };
-            headerButtons.appendChild(refreshBtn);
+            headerButtons.appendChild(circlePatternBtn);
+        }
+
+        // Duochrome toggle functionality
+        let duochromeEnabled = false;
+
+        function toggleDuochrome() {
+            duochromeEnabled = !duochromeEnabled;
+            const testContainer = document.getElementById('test-container');
+            const duochromeBtn = document.getElementById('duochrome-toggle');
+
+            if (duochromeEnabled) {
+                testContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+                duochromeBtn.textContent = '🔴🟢 Duochrome: ON';
+                duochromeBtn.classList.add('primary');
+            } else {
+                testContainer.style.background = 'white';
+                duochromeBtn.textContent = '🔴🟢 Duochrome: OFF';
+                duochromeBtn.classList.remove('primary');
+            }
         }
 
         function renderHorizontalLine() {

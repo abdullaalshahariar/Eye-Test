@@ -208,6 +208,7 @@
     <div class="header">
         <h1>Landolt C Visual Acuity Chart</h1>
         <div class="header-buttons">
+            <button id="duochrome-toggle">🔴🟢 Duochrome: OFF</button>
             <button onclick="window.history.back()">← Back</button>
             <button onclick="regenerateChart()">🔄 Refresh</button>
         </div>
@@ -351,6 +352,30 @@
         window.regenerateChart = function () {
             loadAndDisplayChart();
         };
+
+        // Duochrome toggle functionality
+        let duochromeEnabled = false;
+        const duochromeToggle = document.getElementById('duochrome-toggle');
+
+        duochromeToggle.addEventListener('click', function () {
+            duochromeEnabled = !duochromeEnabled;
+            const chartContainer = document.getElementById('chart-container');
+            const rows = chartContainer.querySelectorAll('.cchart-row');
+
+            if (duochromeEnabled) {
+                chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+                rows.forEach(row => row.style.backgroundColor = 'transparent');
+                duochromeToggle.textContent = '🔴🟢 Duochrome: ON';
+                duochromeToggle.classList.add('primary');
+            } else {
+                const result = loadSettings();
+                const backgroundColor = result.success ? (result.settings.backgroundColor || '#ffffff') : '#ffffff';
+                chartContainer.style.background = backgroundColor;
+                rows.forEach(row => row.style.backgroundColor = backgroundColor);
+                duochromeToggle.textContent = '🔴🟢 Duochrome: OFF';
+                duochromeToggle.classList.remove('primary');
+            }
+        });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function (e) {
