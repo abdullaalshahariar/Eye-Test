@@ -262,7 +262,7 @@
                         const dx = x - dot.x;
                         const dy = y - dot.y;
                         const distance = Math.sqrt(dx * dx + dy * dy);
-                        return distance < dotSize * 1.2; // Minimum spacing
+                        return distance < dotSize * 1.2; // Minimum spacing (20% gap)
                     });
 
                     attempts++;
@@ -305,7 +305,6 @@
             dotsContainer.classList.add('dots-container');
 
             const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
-            const boxSize = fontSize * 5; // Box size same as letter height (5 strokes)
             const dotSize = fontSize * 0.8; // Dot size
 
             if (nextRowFontSize) {
@@ -333,10 +332,24 @@
             // Randomize number of dots per box
             // Larger dots (logMAR >= 0.7) get max 3 dots, smaller dots get 1-5
             let maxDots = logMAR >= 0.7 ? 3 : 5;
-            const dotsPerBox = Math.floor(Math.random() * maxDots) + 1;
 
             // Create boxes with dots
             for (let i = 0; i < numBoxes; i++) {
+                // Randomize number of dots for THIS box
+                const dotsPerBox = Math.floor(Math.random() * maxDots) + 1;
+
+                // Adaptive box size based on number of dots
+                let boxSize;
+                if (dotsPerBox === 1) {
+                    boxSize = dotSize * 1.3; // Just enough for 1 dot with minimal padding
+                } else if (dotsPerBox === 2) {
+                    boxSize = dotSize * 2.2; // Room for 2 dots
+                } else if (dotsPerBox === 3) {
+                    boxSize = dotSize * 2.8; // Room for 3 dots
+                } else {
+                    boxSize = dotSize * 3.5; // Room for 4-5 dots
+                }
+
                 const dotBox = document.createElement('div');
                 dotBox.classList.add('dot-box');
                 dotBox.style.width = `${boxSize}pt`;
