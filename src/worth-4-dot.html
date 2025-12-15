@@ -165,8 +165,6 @@
         <h1>Worth 4 Dot Test</h1>
         <div class="header-buttons">
             <button onclick="window.history.back()">← Back</button>
-            <button onclick="increaseSize()">+ Larger</button>
-            <button onclick="decreaseSize()">- Smaller</button>
             <button onclick="regenerateTest()">🔄 Rotate</button>
         </div>
     </div>
@@ -245,41 +243,16 @@
             });
         }
 
-        window.increaseSize = function () {
-            if (currentLogmarIndex > 0) {
-                currentLogmarIndex--;
-                generateWorth4Dots();
-            }
-        };
-
-        window.decreaseSize = function () {
-            if (currentLogmarIndex < logmarValues.length - 1) {
-                currentLogmarIndex++;
-                generateWorth4Dots();
-            }
-        };
-
         window.regenerateTest = function () {
-            // Change rotation
-            const rotations = [0, 90, 180, 270];
-            const currentIndex = rotations.indexOf(currentRotation);
-            const nextIndex = (currentIndex + 1) % rotations.length;
-            currentRotation = rotations[nextIndex];
+            // Randomly rotate 1, 2, or 3 steps to the right (90°, 180°, or 270°)
+            const randomSteps = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
+            const rotationAmount = randomSteps * 90;
+            currentRotation = (currentRotation + rotationAmount) % 360;
             generateWorth4Dots();
         };
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function (e) {
-            // Arrow Up or + to increase size
-            if (e.key === 'ArrowUp' || e.key === '+' || e.key === '=') {
-                e.preventDefault();
-                increaseSize();
-            }
-            // Arrow Down or - to decrease size
-            if (e.key === 'ArrowDown' || e.key === '-') {
-                e.preventDefault();
-                decreaseSize();
-            }
             // F5 or Ctrl+R to rotate
             if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
                 e.preventDefault();
