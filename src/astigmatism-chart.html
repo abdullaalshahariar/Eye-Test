@@ -148,7 +148,7 @@
 
         // LogMAR values for size control
         const logmarValues = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0, -0.1, -0.2, -0.3];
-        let currentLogmarIndex = 6; // Start at 0.4
+        let currentLogmarIndex = 5; // Start at 0.3
         const numberOfLines = 19; // 19 lines at 10° intervals
         let rotationAngle = 0; // Rotation angle for the entire chart
 
@@ -174,16 +174,6 @@
             };
             headerButtons.appendChild(backBtn);
 
-            const largerBtn = document.createElement('button');
-            largerBtn.textContent = '+ Larger';
-            largerBtn.onclick = increaseSize;
-            headerButtons.appendChild(largerBtn);
-
-            const smallerBtn = document.createElement('button');
-            smallerBtn.textContent = '- Smaller';
-            smallerBtn.onclick = decreaseSize;
-            headerButtons.appendChild(smallerBtn);
-
             const rotateLeftBtn = document.createElement('button');
             rotateLeftBtn.textContent = '↺ Rotate Left';
             rotateLeftBtn.onclick = rotateLeft;
@@ -203,7 +193,7 @@
             const diameter = baseFontSize * 6;
             const radius = diameter / 2;
             const lineLength = radius * 0.9;
-            const lineThickness = baseFontSize / 8;
+            const lineThickness = baseFontSize / 12;
 
             // Center point - moved down so lines extend upward
             // Padding should scale with chart size to accommodate arrow and labels
@@ -329,22 +319,6 @@
             renderChart();
         }
 
-        function increaseSize() {
-            if (currentLogmarIndex > 0) {
-                currentLogmarIndex--;
-                loadCurrentSettings();
-                renderChart();
-            }
-        }
-
-        function decreaseSize() {
-            if (currentLogmarIndex < logmarValues.length - 1) {
-                currentLogmarIndex++;
-                loadCurrentSettings();
-                renderChart();
-            }
-        }
-
         function rotateLeft() {
             // Only allow rotation if not already at 0°
             if (rotationAngle > 0) {
@@ -363,14 +337,6 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'ArrowUp' || e.key === '+' || e.key === '=') {
-                e.preventDefault();
-                increaseSize();
-            }
-            if (e.key === 'ArrowDown' || e.key === '-') {
-                e.preventDefault();
-                decreaseSize();
-            }
             if (e.key === 'ArrowLeft') {
                 e.preventDefault();
                 rotateLeft();

@@ -321,40 +321,6 @@
                     <input type="number" id="distance" value="6" min="0.1" step="0.1">
                     <small style="font-size: 0.8em; color: #888; margin-top: 4px;">Standard: 6m, 4m, or 3m</small>
                 </div>
-
-                <div class="setting-item">
-                    <label for="letter-set">Character Set</label>
-                    <select id="letter-set">
-                        <option value="ETDRS">ETDRS Letters</option>
-                        <option value="Snellen">Snellen Letters</option>
-                        <option value="Numbers">Numbers (0-9)</option>
-                        <option value="Custom">Custom Characters</option>
-                    </select>
-                </div>
-
-                <div class="setting-item" id="custom-letters-container" style="display: none;">
-                    <label for="custom-letters">Custom Characters (comma-separated)</label>
-                    <input type="text" id="custom-letters" placeholder="e.g., C, D, H, K, N">
-                </div>
-
-                <div class="setting-item">
-                    <label for="distribution">Letter Distribution</label>
-                    <select id="distribution">
-                        <option value="snellen">Snellen-like (Variable)</option>
-                        <option value="etdrs">ETDRS (5 per row)</option>
-                        <option value="linear">Linear Increase</option>
-                    </select>
-                </div>
-
-                <div class="setting-item">
-                    <label for="letter-color">Letter Color</label>
-                    <input type="color" id="letter-color" value="#000000">
-                </div>
-
-                <div class="setting-item">
-                    <label for="background-color">Background Color</label>
-                    <input type="color" id="background-color" value="#ffffff">
-                </div>
             </div>
 
             <div class="row-selector">
@@ -409,12 +375,6 @@
         } from './helpers/logmar3.js';
 
         const distanceInput = document.getElementById('distance');
-        const letterSetSelect = document.getElementById('letter-set');
-        const customLettersContainer = document.getElementById('custom-letters-container');
-        const customLettersInput = document.getElementById('custom-letters');
-        const distributionSelect = document.getElementById('distribution');
-        const letterColorInput = document.getElementById('letter-color');
-        const backgroundColorInput = document.getElementById('background-color');
         const scalingFactorInput = document.getElementById('scaling-factor');
         const rowOptionsContainer = document.getElementById('row-options');
         const calibrationLetterElement = document.getElementById('calibration-letter');
@@ -442,6 +402,11 @@
             logMARValues.forEach(logMAR => {
                 const checkboxId = `row-${logMAR.toFixed(1).replace('.', '_').replace('-', 'n')}`;
 
+                // Calculate Snellen ratio
+                const denominator = distance / Math.pow(10, -logMAR);
+                const roundedDenom = Math.round(denominator);
+                const snellenRatio = `${distance}/${roundedDenom}`;
+
                 const checkboxDiv = document.createElement('div');
                 checkboxDiv.className = 'row-checkbox';
 
@@ -453,7 +418,7 @@
 
                 const label = document.createElement('label');
                 label.htmlFor = checkboxId;
-                label.textContent = `LogMAR ${logMAR.toFixed(1)}`;
+                label.textContent = `LogMAR ${logMAR.toFixed(1)} (${snellenRatio})`;
 
                 checkboxDiv.appendChild(checkbox);
                 checkboxDiv.appendChild(label);
@@ -464,14 +429,12 @@
         function updateCalibrationDisplay() {
             const distance = parseFloat(distanceInput.value) || 6;
             const scalingFactor = parseFloat(scalingFactorInput.value) || 1.0;
-            const letterSetKey = letterSetSelect.value;
-            const customLettersValue = customLettersInput.value;
 
             const fontSize = calculateFontSize(0.0, distance, scalingFactor);
             calibrationLetterElement.style.fontSize = `${fontSize.toFixed(2)}pt`;
-            calibrationLetterElement.style.color = letterColorInput.value;
+            calibrationLetterElement.style.color = '#000000';
 
-            const characters = getCharacterSet(letterSetKey, customLettersValue);
+            const characters = getCharacterSet('Snellen', '');
             calibrationLetterElement.textContent = characters.length > 0 ? characters[0] : 'E';
 
             const targetHeightMm = getTargetCalibrationHeightMm(distance);
@@ -481,11 +444,11 @@
         function getCurrentSettings() {
             return {
                 distance: distanceInput.value,
-                letterSet: letterSetSelect.value,
-                customLetters: customLettersInput.value,
-                distribution: distributionSelect.value,
-                letterColor: letterColorInput.value,
-                backgroundColor: backgroundColorInput.value,
+                letterSet: 'Snellen',
+                customLetters: '',
+                distribution: 'snellen',
+                letterColor: '#000000',
+                backgroundColor: '#ffffff',
                 scalingFactor: scalingFactorInput.value,
                 selectedRows: Array.from(rowOptionsContainer.querySelectorAll('input[type="checkbox"]:checked'))
                     .map(cb => cb.value)
@@ -503,14 +466,7 @@
             if (result.success) {
                 const s = result.settings;
                 distanceInput.value = s.distance || '6';
-                letterSetSelect.value = s.letterSet || 'ETDRS';
-                customLettersInput.value = s.customLetters || '';
-                distributionSelect.value = s.distribution || 'etdrs';
-                letterColorInput.value = s.letterColor || '#000000';
-                backgroundColorInput.value = s.backgroundColor || '#ffffff';
                 scalingFactorInput.value = s.scalingFactor || '1.0';
-
-                customLettersContainer.style.display = letterSetSelect.value === 'Custom' ? 'block' : 'none';
 
                 const selectedRowValues = s.selectedRows || [];
                 rowOptionsContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
@@ -559,23 +515,12 @@
         };
 
         // Event listeners
-        letterSetSelect.addEventListener('change', function () {
-            customLettersContainer.style.display = this.value === 'Custom' ? 'block' : 'none';
-            updateCalibrationDisplay();
-        });
-
         distanceInput.addEventListener('input', () => {
             generateRowOptions();
             updateCalibrationDisplay();
         });
 
         scalingFactorInput.addEventListener('input', updateCalibrationDisplay);
-        letterColorInput.addEventListener('input', updateCalibrationDisplay);
-        customLettersInput.addEventListener('input', () => {
-            if (letterSetSelect.value === 'Custom') {
-                updateCalibrationDisplay();
-            }
-        });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function (e) {
