@@ -431,7 +431,6 @@
                 letterSpan.className = `hotv-letter ${positions[i]}`;
                 letterSpan.textContent = selectedLetters[i];
                 letterSpan.style.fontSize = `${fontSize}pt`;
-                letterSpan.style.transform = 'scaleY(1.25)'; // Make letters square (5:5 ratio)
                 circleDiv.appendChild(letterSpan);
             }
 
@@ -440,7 +439,6 @@
             centerLetter.className = 'hotv-letter center';
             centerLetter.textContent = selectedLetters[6];
             centerLetter.style.fontSize = `${fontSize}pt`;
-            centerLetter.style.transform = 'scaleY(1.25)'; // Make letters square (5:5 ratio)
             circleDiv.appendChild(centerLetter);
 
             displayArea.appendChild(circleDiv);

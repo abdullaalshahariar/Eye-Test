@@ -278,8 +278,6 @@
                 letterSpan.classList.add('alphabet-letter');
                 letterSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
                 letterSpan.style.color = letterColor;
-                letterSpan.style.transform = 'scaleY(1.25)'; // Make letters square (5:5 ratio)
-                letterSpan.style.display = 'inline-block';
                 letterSpan.textContent = char;
                 lettersContainer.appendChild(letterSpan);
             });
