@@ -471,6 +471,25 @@
 
         window.regenerateChart = function () {
             loadAndDisplayChart();
+            // Re-apply duochrome if it was enabled
+            if (duochromeEnabled) {
+                const chartContainer = document.getElementById('chart-container');
+                const rows = chartContainer.querySelectorAll('.symbol-row');
+                const symbolsContainers = chartContainer.querySelectorAll('.symbols-container');
+
+                if (symbolsContainers.length > 0) {
+                    const firstContainer = symbolsContainers[0];
+                    const containerRect = chartContainer.getBoundingClientRect();
+                    const symbolsRect = firstContainer.getBoundingClientRect();
+
+                    const symbolsCenter = symbolsRect.left + symbolsRect.width / 2 - containerRect.left;
+                    const containerWidth = containerRect.width;
+                    const centerPercent = (symbolsCenter / containerWidth * 100).toFixed(2);
+
+                    chartContainer.style.background = `linear-gradient(to right, #D32F2F 0%, #D32F2F ${centerPercent}%, #388E3C ${centerPercent}%, #388E3C 100%)`;
+                }
+                rows.forEach(row => row.style.backgroundColor = 'transparent');
+            }
         };
 
         // Duochrome toggle functionality
@@ -481,9 +500,21 @@
             duochromeEnabled = !duochromeEnabled;
             const chartContainer = document.getElementById('chart-container');
             const rows = chartContainer.querySelectorAll('.symbol-row');
+            const symbolsContainers = chartContainer.querySelectorAll('.symbols-container');
 
             if (duochromeEnabled) {
-                chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+                // Calculate where the symbols-container center is relative to chart-container
+                if (symbolsContainers.length > 0) {
+                    const firstContainer = symbolsContainers[0];
+                    const containerRect = chartContainer.getBoundingClientRect();
+                    const symbolsRect = firstContainer.getBoundingClientRect();
+
+                    const symbolsCenter = symbolsRect.left + symbolsRect.width / 2 - containerRect.left;
+                    const containerWidth = containerRect.width;
+                    const centerPercent = (symbolsCenter / containerWidth * 100).toFixed(2);
+
+                    chartContainer.style.background = `linear-gradient(to right, #D32F2F 0%, #D32F2F ${centerPercent}%, #388E3C ${centerPercent}%, #388E3C 100%)`;
+                }
                 rows.forEach(row => row.style.backgroundColor = 'transparent');
                 duochromeToggle.textContent = '🔴🟢 Duochrome: ON';
                 duochromeToggle.classList.add('primary');

@@ -350,6 +350,13 @@
 
         window.regenerateChart = function () {
             loadAndDisplayChart();
+            // Re-apply duochrome if it was enabled
+            if (duochromeEnabled) {
+                const chartContainer = document.getElementById('chart-container');
+                const rows = chartContainer.querySelectorAll('.letter-row');
+                chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+                rows.forEach(row => row.style.backgroundColor = 'transparent');
+            }
         };
 
         // Keyboard shortcuts
