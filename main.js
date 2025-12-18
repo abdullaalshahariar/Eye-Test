@@ -10,7 +10,8 @@ const createWindow = () => {
     height: 600,
   })
 
-  const filePath = path.join(__dirname, '/src/index.html');
+  const filePath = path.join(__dirname, '/docs/index.html');
+  //const filePath = path.join(__dirname, '/docs/index.html');
   window.loadFile(filePath);
 
   window.once('ready-to-show', () => {
