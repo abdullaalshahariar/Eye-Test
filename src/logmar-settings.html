@@ -174,14 +174,10 @@
 
         #calibration-letter {
             margin: 25px auto;
-            padding: 15px;
-            border: 1px dashed var(--success-color);
+            padding: 0;
+            border: none;
             display: inline-block;
             min-width: 50px;
-            font-family: 'Optician Sans', Arial, sans-serif;
-            font-weight: bold;
-            background: white;
-            color: black;
         }
 
         button {
@@ -337,20 +333,17 @@
 
             <div class="calibration-box" id="calibration-section">
                 <h3>Screen Calibration</h3>
-                <p>1. Click "Print Calibration" to print this letter.<br>
-                    2. Measure the printed letter's height with a ruler.<br>
-                    3. Adjust the scaling factor until the on-screen letter matches the printed size.</p>
+                <p>1. Click "Print Calibration" to print this bar.<br>
+                    2. Measure the printed bar's width with a ruler - it should match the target width below.<br>
+                    3. Adjust the scaling factor until the on-screen bar width matches the printed width.</p>
                 <div id="calibration-letter">E</div>
                 <div class="setting-item" style="max-width: 300px; margin: 0 auto;">
                     <label for="scaling-factor">Scaling Factor</label>
                     <input type="number" id="scaling-factor" value="1.0" step="0.01" min="0.1">
                 </div>
                 <div style="margin-top: 15px;">
-                    <span>Target Height: </span>
-                    <strong id="target-height" style="color: var(--success-color);">8.73 mm</strong>
-                </div>
-                <div style="margin-top: 20px;">
-                    <button onclick="printCalibration()" class="primary">🖨️ Print Calibration</button>
+                    <span>Target Width: </span>
+                    <strong id="target-height" style="color: var(--success-color);">34.9 mm</strong>
                 </div>
             </div>
 
@@ -430,15 +423,21 @@
             const distance = parseFloat(distanceInput.value) || 6;
             const scalingFactor = parseFloat(scalingFactorInput.value) || 1.0;
 
-            const fontSize = calculateFontSize(0.0, distance, scalingFactor);
-            calibrationLetterElement.style.fontSize = `${fontSize.toFixed(2)}pt`;
-            calibrationLetterElement.style.color = '#000000';
+            // Calculate base size and multiply by 4 for easier measurement
+            const fontSize = calculateFontSize(0.0, distance, scalingFactor) * 4;
+            const targetHeightMm = 35; // 7 segments × 5mm = 35mm
 
-            const characters = getCharacterSet('Snellen', '');
-            calibrationLetterElement.textContent = characters.length > 0 ? characters[0] : 'E';
+            // Create simple white box
+            const heightPt = fontSize * 0.15;
 
-            const targetHeightMm = getTargetCalibrationHeightMm(distance);
-            targetHeightElement.textContent = `${targetHeightMm.toFixed(2)} mm`;
+            calibrationLetterElement.innerHTML = '';
+            calibrationLetterElement.style.width = `${fontSize}pt`;
+            calibrationLetterElement.style.height = `${heightPt}pt`;
+            calibrationLetterElement.style.backgroundColor = 'white';
+            calibrationLetterElement.style.border = '2px solid black';
+            calibrationLetterElement.style.display = 'inline-block';
+
+            targetHeightElement.textContent = `${targetHeightMm} mm`;
         }
 
         function getCurrentSettings() {
