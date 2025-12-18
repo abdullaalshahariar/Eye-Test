@@ -185,16 +185,6 @@
             };
             headerButtons.appendChild(backBtn);
 
-            const largerBtn = document.createElement('button');
-            largerBtn.textContent = '+ Larger';
-            largerBtn.onclick = increaseSize;
-            headerButtons.appendChild(largerBtn);
-
-            const smallerBtn = document.createElement('button');
-            smallerBtn.textContent = '- Smaller';
-            smallerBtn.onclick = decreaseSize;
-            headerButtons.appendChild(smallerBtn);
-
             const invertBtn = document.createElement('button');
             invertBtn.textContent = isInverted ? 'Normal Mode' : 'Invert Colors';
             invertBtn.onclick = toggleInvert;
@@ -300,22 +290,6 @@
             renderGrid();
         }
 
-        function increaseSize() {
-            if (currentLogmarIndex > 0) {
-                currentLogmarIndex--;
-                loadCurrentSettings();
-                renderGrid();
-            }
-        }
-
-        function decreaseSize() {
-            if (currentLogmarIndex < logmarValues.length - 1) {
-                currentLogmarIndex++;
-                loadCurrentSettings();
-                renderGrid();
-            }
-        }
-
         function moveDot(dx, dy) {
             dotX = Math.max(0, Math.min(20, dotX + dx));
             dotY = Math.max(0, Math.min(20, dotY + dy));
@@ -346,15 +320,6 @@
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 moveDot(0, 1);
-            }
-            // Size controls
-            if (e.key === '+' || e.key === '=') {
-                e.preventDefault();
-                increaseSize();
-            }
-            if (e.key === '-') {
-                e.preventDefault();
-                decreaseSize();
             }
             // Invert colors
             if (e.key === 'i' || e.key === 'I') {
