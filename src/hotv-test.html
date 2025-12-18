@@ -73,417 +73,266 @@
 
         .content {
             flex: 1;
-            padding: 0;
-            overflow: hidden;
+            padding: 20px;
+            overflow: auto;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            background: white;
-        }
-
-        #test-container {
-            background: white;
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .size-indicator {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.1);
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #333;
-            z-index: 100;
-            display: block;
-        }
-
-        /* Circle Pattern */
-        .circle-pattern {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(5, 1fr);
-            gap: 0;
-            padding: 40px;
-            box-sizing: border-box;
-        }
-
-        .hotv-letter {
-            font-family: 'Optician Sans', Arial, sans-serif;
-            font-weight: bold;
-            color: #000000;
-            user-select: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .hotv-letter.center {
-            grid-column: 3;
-            grid-row: 3;
-        }
-
-        .hotv-letter.pos-top {
-            grid-column: 3;
-            grid-row: 1;
-        }
-
-        .hotv-letter.pos-top-right {
-            grid-column: 5;
-            grid-row: 2;
-        }
-
-        .hotv-letter.pos-bottom-right {
-            grid-column: 5;
-            grid-row: 4;
-        }
-
-        .hotv-letter.pos-bottom {
-            grid-column: 3;
-            grid-row: 5;
-        }
-
-        .hotv-letter.pos-bottom-left {
-            grid-column: 1;
-            grid-row: 4;
-        }
-
-        .hotv-letter.pos-top-left {
-            grid-column: 1;
-            grid-row: 2;
-        }
-
-        /* Single Letter Display */
-        .single-letter-display {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-        }
-
-        .single-letter {
-            font-family: 'Optician Sans', Arial, sans-serif;
-            font-weight: bold;
-            color: #000000;
-            user-select: none;
-        }
-
-        /* Line Display */
-        .line-display {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            height: 100%;
-            padding: 40px;
-            box-sizing: border-box;
-        }
-
-        .line-display.horizontal {
-            justify-content: center;
             flex-direction: column;
         }
 
-        .line-display.vertical {
+        #chart-container {
+            width: 100%;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-sizing: border-box;
+            flex: 1;
+            display: flex;
+            align-items: center;
             justify-content: center;
-            flex-direction: row;
         }
 
-        .letter-row {
+        .hotv-row {
             display: flex;
             width: 100%;
             align-items: center;
-            margin-bottom: 5px;
         }
 
         .acuity-label {
-            padding-right: 15px;
-            margin-right: 15px;
-            border-right: 1px solid #000;
+            padding-right: 10px;
+            margin-right: 10px;
+            border-right: 1px solid;
             display: flex;
             flex-direction: column;
             align-items: flex-end;
             justify-content: center;
             gap: 4px;
-            width: 150px;
+            width: 80px;
             flex-shrink: 0;
             text-align: right;
+            height: 100%;
         }
 
         .letters-container {
             display: flex;
             align-items: center;
+            width: 100%;
             justify-content: center;
-            flex: 1;
-            gap: 10px;
             flex-wrap: nowrap;
+            overflow: hidden;
+            padding: 5px 0;
         }
 
         .snellen-value {
             font-size: 1.1em;
             font-weight: bold;
-            color: #000;
         }
 
         .logmar-value {
             font-size: 0.9em;
-            color: #333;
         }
 
-        @media print {
-            .header {
-                display: none !important;
-            }
-
-            #test-container {
-                width: 100%;
-                height: 100vh;
-            }
-
-            * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
+        .hotv-letter {
+            font-family: 'Optician Sans', Arial, sans-serif;
+            font-weight: bold;
+            text-align: center;
+            flex: 0 0 auto;
+            padding: 0 0.3em;
+            line-height: 1;
         }
     </style>
 </head>
 
 <body>
     <div class="header">
-        <h1>HOTV Test</h1>
-        <div class="header-buttons" id="header-buttons">
-            <!-- Dynamic buttons will be inserted here -->
+        <h1>HOTV Visual Acuity Test</h1>
+        <div class="header-buttons">
+            <button id="larger-btn">+ Larger</button>
+            <button id="smaller-btn">- Smaller</button>
+            <button id="duochrome-toggle">🔴🟢 Duochrome: OFF</button>
+            <button onclick="window.history.back()">← Back</button>
+            <button onclick="regenerateChart()">🔄 Refresh</button>
         </div>
     </div>
 
     <div class="content">
-        <div id="test-container">
-            <div class="size-indicator" id="size-indicator"></div>
-            <div id="display-area"></div>
-        </div>
+        <div id="chart-container"></div>
     </div>
 
     <script type="module">
         import {
             loadSettings,
             calculateFontSize,
-            logMarToSnellen
+            logMarToSnellen,
+            shuffleArray
         } from './helpers/logmar3.js';
 
-        const displayArea = document.getElementById('display-area');
-        const sizeIndicator = document.getElementById('size-indicator');
-        const headerButtons = document.getElementById('header-buttons');
-
-        const HOTV_LETTERS = ['H', 'O', 'T', 'V'];
-
-        // LogMAR values for size control
-        const logmarValues = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0, -0.1, -0.2, -0.3];
-        let currentLogmarIndex = 4; // Start at 0.6 (6/24)
-
-        let distance = 6;
-        let scalingFactor = 1.0;
-
-        function loadCurrentSettings() {
-            const result = loadSettings();
-            if (result.success) {
-                const settings = result.settings;
-                distance = parseFloat(settings.distance) || 6;
-                scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
-            }
-        }
-
-        function updateSizeIndicator() {
-            const currentLogmar = logmarValues[currentLogmarIndex];
-            const snellenResult = logMarToSnellen(currentLogmar, distance);
-            sizeIndicator.textContent = typeof snellenResult === 'string' ? snellenResult : snellenResult.primary;
-        }
-
-        function updateButtons() {
-            headerButtons.innerHTML = '';
-
-            const duochromeBtn = document.createElement('button');
-            duochromeBtn.id = 'duochrome-toggle';
-            duochromeBtn.textContent = '🔴🟢 Duochrome: OFF';
-            duochromeBtn.onclick = toggleDuochrome;
-            headerButtons.appendChild(duochromeBtn);
-
-            const backBtn = document.createElement('button');
-            backBtn.textContent = '← Back';
-            backBtn.onclick = () => {
-                window.history.back();
-            };
-            headerButtons.appendChild(backBtn);
-
-            const largerBtn = document.createElement('button');
-            largerBtn.textContent = '+ Larger';
-            largerBtn.onclick = increaseSize;
-            headerButtons.appendChild(largerBtn);
-
-            const smallerBtn = document.createElement('button');
-            smallerBtn.textContent = '- Smaller';
-            smallerBtn.onclick = decreaseSize;
-            headerButtons.appendChild(smallerBtn);
-
-            const refreshBtn = document.createElement('button');
-            refreshBtn.textContent = '🔄 Refresh';
-            refreshBtn.onclick = () => {
-                renderCirclePattern();
-            };
-            headerButtons.appendChild(refreshBtn);
-
-            const horizontalLineBtn = document.createElement('button');
-            horizontalLineBtn.textContent = 'Horizontal Line';
-            horizontalLineBtn.onclick = () => {
-                window.location.href = 'hotv-horizontal.html';
-            };
-            headerButtons.appendChild(horizontalLineBtn);
-
-            const verticalLineBtn = document.createElement('button');
-            verticalLineBtn.textContent = 'Vertical Lines';
-            verticalLineBtn.onclick = () => {
-                window.location.href = 'hotv-vertical.html';
-            };
-            headerButtons.appendChild(verticalLineBtn);
-
-            const singleLetterBtn = document.createElement('button');
-            singleLetterBtn.textContent = 'Single Letter';
-            singleLetterBtn.onclick = () => {
-                window.location.href = 'hotv-single.html';
-            };
-            headerButtons.appendChild(singleLetterBtn);
-        }
-
-        // Duochrome toggle functionality
+        const chartContainer = document.getElementById('chart-container');
+        const hotvLetters = ['H', 'O', 'T', 'V'];
+        let currentLogmarIndex = 0;
+        let availableLogmars = [];
         let duochromeEnabled = false;
 
-        function toggleDuochrome() {
+        function generateHOTVRow(logMAR, distance, scalingFactor, letterColor, backgroundColor, labelColor) {
+            const row = document.createElement('div');
+            row.classList.add('hotv-row');
+            row.style.backgroundColor = backgroundColor;
+
+            // Acuity Label
+            const labelDiv = document.createElement('div');
+            labelDiv.classList.add('acuity-label');
+            labelDiv.style.borderRightColor = labelColor;
+
+            const snellenSpan = document.createElement('span');
+            snellenSpan.classList.add('snellen-value');
+            const snellenResult = logMarToSnellen(logMAR, distance);
+            snellenSpan.textContent = typeof snellenResult === 'string' ? snellenResult : snellenResult.primary;
+            snellenSpan.style.color = labelColor;
+
+            const logmarSpan = document.createElement('span');
+            logmarSpan.classList.add('logmar-value');
+            logmarSpan.textContent = `LogMAR: ${logMAR.toFixed(1)}`;
+            logmarSpan.style.color = labelColor;
+
+            labelDiv.appendChild(snellenSpan);
+            labelDiv.appendChild(logmarSpan);
+
+            // Letters Container - single random letter from HOTV
+            const lettersContainer = document.createElement('div');
+            lettersContainer.classList.add('letters-container');
+
+            const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
+            const shuffledChars = shuffleArray([...hotvLetters]);
+            const char = shuffledChars[0];
+
+            const letterSpan = document.createElement('span');
+            letterSpan.classList.add('hotv-letter');
+            letterSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
+            letterSpan.style.color = letterColor;
+            letterSpan.textContent = char;
+            lettersContainer.appendChild(letterSpan);
+
+            row.appendChild(labelDiv);
+            row.appendChild(lettersContainer);
+            return row;
+        }
+
+        function showHorizontalLine() {
+            const result = loadSettings();
+            if (!result.success) {
+                chartContainer.innerHTML = `
+                    <div style="text-align:center; padding: 40px; color: #666;">
+                        <h3>No Settings Found</h3>
+                        <p>Please configure chart settings first.</p>
+                        <button onclick="window.location.href='logmar-settings.html'">Go to Settings</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const settings = result.settings;
+            const distance = parseFloat(settings.distance) || 6;
+            const scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            const letterColor = settings.letterColor || '#000000';
+            const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+
+            if (selectedRows.length === 0) {
+                chartContainer.innerHTML = '<p style="text-align:center; padding: 40px; color: #666;">No rows selected in settings.</p>';
+                return;
+            }
+
+            // Sort from largest to smallest (highest logMAR to lowest)
+            availableLogmars = [...selectedRows].sort((a, b) => b - a);
+
+            // Ensure index is within bounds
+            if (currentLogmarIndex >= availableLogmars.length) {
+                currentLogmarIndex = availableLogmars.length - 1;
+            }
+
+            const targetLogMAR = availableLogmars[currentLogmarIndex];
+
+            chartContainer.innerHTML = '';
+
+            // Handle duochrome mode
+            if (duochromeEnabled) {
+                chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+            } else {
+                chartContainer.style.background = '#ffffff';
+            }
+
+            chartContainer.style.display = 'flex';
+            chartContainer.style.alignItems = 'center';
+            chartContainer.style.justifyContent = 'center';
+            chartContainer.style.minHeight = '100%';
+
+            const labelColor = '#000000';
+            const rowElement = generateHOTVRow(targetLogMAR, distance, scalingFactor, letterColor, duochromeEnabled ? 'transparent' : '#ffffff', labelColor);
+            chartContainer.appendChild(rowElement);
+        }
+
+        window.regenerateChart = function () {
+            showHorizontalLine();
+        };
+
+        // Duochrome toggle functionality
+        const duochromeToggle = document.getElementById('duochrome-toggle');
+        duochromeToggle.addEventListener('click', function () {
             duochromeEnabled = !duochromeEnabled;
-            const testContainer = document.getElementById('test-container');
-            const duochromeBtn = document.getElementById('duochrome-toggle');
 
             if (duochromeEnabled) {
-                testContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
-                duochromeBtn.textContent = '🔴🟢 Duochrome: ON';
-                duochromeBtn.classList.add('primary');
+                duochromeToggle.textContent = '🔴🟢 Duochrome: ON';
+                duochromeToggle.classList.add('primary');
             } else {
-                testContainer.style.background = 'white';
-                duochromeBtn.textContent = '🔴🟢 Duochrome: OFF';
-                duochromeBtn.classList.remove('primary');
-            }
-        }
-
-        function renderCirclePattern() {
-            displayArea.innerHTML = '';
-            displayArea.className = '';
-            sizeIndicator.style.display = 'block';
-
-            const circleDiv = document.createElement('div');
-            circleDiv.className = 'circle-pattern';
-
-            const currentLogmar = logmarValues[currentLogmarIndex];
-            const fontSize = calculateFontSize(currentLogmar, distance, scalingFactor);
-
-            // Generate 7 unique letters (no duplicates) using LogMAR letter pool
-            const selectedLetters = [];
-            let availableLetters = ['C', 'D', 'E', 'F', 'L', 'O', 'P', 'T', 'Z', 'H', 'N', 'R', 'U', 'V', 'K', 'S'];
-
-            for (let i = 0; i < 7; i++) {
-                // Pick a random index from available letters
-                const randomIndex = Math.floor(Math.random() * availableLetters.length);
-                const selectedLetter = availableLetters[randomIndex];
-
-                // Add to selected
-                selectedLetters.push(selectedLetter);
-
-                // Remove from available (create new array without this letter)
-                const newAvailable = [];
-                for (let j = 0; j < availableLetters.length; j++) {
-                    if (j !== randomIndex) {
-                        newAvailable.push(availableLetters[j]);
-                    }
-                }
-                availableLetters = newAvailable;
+                duochromeToggle.textContent = '🔴🟢 Duochrome: OFF';
+                duochromeToggle.classList.remove('primary');
+                // Clear the gradient background completely
+                chartContainer.style.background = '#ffffff';
             }
 
-            // Position classes for 5x5 grid
-            const positions = [
-                'pos-top',           // Row 0, Col 2
-                'pos-top-right',     // Row 1, Col 4
-                'pos-bottom-right',  // Row 3, Col 4
-                'pos-bottom',        // Row 4, Col 2
-                'pos-bottom-left',   // Row 3, Col 0
-                'pos-top-left'       // Row 1, Col 0
-            ];
+            showHorizontalLine();
+        });
 
-            // Create 6 letters around in circle positions
-            for (let i = 0; i < 6; i++) {
-                const letterSpan = document.createElement('div');
-                letterSpan.className = `hotv-letter ${positions[i]}`;
-                letterSpan.textContent = selectedLetters[i];
-                letterSpan.style.fontSize = `${fontSize}pt`;
-                circleDiv.appendChild(letterSpan);
-            }
+        // Size controls
+        const largerBtn = document.getElementById('larger-btn');
+        const smallerBtn = document.getElementById('smaller-btn');
 
-            // Center letter (Row 2, Col 2)
-            const centerLetter = document.createElement('div');
-            centerLetter.className = 'hotv-letter center';
-            centerLetter.textContent = selectedLetters[6];
-            centerLetter.style.fontSize = `${fontSize}pt`;
-            circleDiv.appendChild(centerLetter);
-
-            displayArea.appendChild(circleDiv);
-        }
-
-        function init() {
-            loadCurrentSettings();
-            updateSizeIndicator();
-            updateButtons();
-            sizeIndicator.style.display = 'block';
-            renderCirclePattern();
-        } function increaseSize() {
+        largerBtn.addEventListener('click', function () {
             if (currentLogmarIndex > 0) {
                 currentLogmarIndex--;
-                loadCurrentSettings();
-                updateSizeIndicator();
-                renderCirclePattern();
+                showHorizontalLine();
             }
-        }
+        });
 
-        function decreaseSize() {
-            if (currentLogmarIndex < logmarValues.length - 1) {
+        smallerBtn.addEventListener('click', function () {
+            if (currentLogmarIndex < availableLogmars.length - 1) {
                 currentLogmarIndex++;
-                loadCurrentSettings();
-                updateSizeIndicator();
-                renderCirclePattern();
+                showHorizontalLine();
             }
-        }
+        });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function (e) {
-            // Arrow Up or + to increase size
-            if (e.key === 'ArrowUp' || e.key === '+' || e.key === '=') {
-                e.preventDefault();
-                increaseSize();
+            // Up arrow for larger
+            if (e.key === 'ArrowUp') {
+                if (currentLogmarIndex > 0) {
+                    currentLogmarIndex--;
+                    showHorizontalLine();
+                }
             }
-            // Arrow Down or - to decrease size
-            if (e.key === 'ArrowDown' || e.key === '-') {
-                e.preventDefault();
-                decreaseSize();
+            // Down arrow for smaller
+            if (e.key === 'ArrowDown') {
+                if (currentLogmarIndex < availableLogmars.length - 1) {
+                    currentLogmarIndex++;
+                    showHorizontalLine();
+                }
             }
-            // F5 or Ctrl+R to refresh
-            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
+            // Space or Enter to refresh (get new random letter)
+            if (e.key === ' ' || e.key === 'Enter') {
                 e.preventDefault();
-                renderCirclePattern();
+                regenerateChart();
+            }
+            // D for duochrome
+            if (e.key === 'd' || e.key === 'D') {
+                duochromeToggle.click();
             }
             // Escape to go back
             if (e.key === 'Escape') {
@@ -491,13 +340,8 @@
             }
         });
 
-        // Regenerate on window resize
-        window.addEventListener('resize', () => {
-            renderCirclePattern();
-        });
-
-        // Initial render
-        setTimeout(() => init(), 100);
+        // Load chart on page load
+        showHorizontalLine();
     </script>
 </body>
 
