@@ -441,7 +441,7 @@
 
                 // Re-apply duochrome if it was enabled
                 if (duochromeEnabled) {
-                    const rows = chartContainer.querySelectorAll('.alphabet-row');
+                    const rows = chartContainer.querySelectorAll('.cchart-row');
                     const lettersContainers = chartContainer.querySelectorAll('.letters-container');
 
                     if (lettersContainers.length > 0) {
@@ -484,7 +484,7 @@
 
                 // Re-apply duochrome if it was enabled
                 if (duochromeEnabled) {
-                    const rows = chartContainer.querySelectorAll('.alphabet-row');
+                    const rows = chartContainer.querySelectorAll('.cchart-row');
                     const lettersContainers = chartContainer.querySelectorAll('.letters-container');
 
                     if (lettersContainers.length > 0) {
@@ -560,7 +560,7 @@
             chartContainer.style.minHeight = '100%';
 
             const labelColor = '#000000';
-            const rowElement = generateCRow(targetLogMAR, distance, scalingFactor, letterColor, '#ffffff', labelColor, distribution, null);
+            const rowElement = generateCRow(targetLogMAR, distance, scalingFactor, letterColor, duochromeEnabled ? 'transparent' : '#ffffff', labelColor, distribution, null);
             chartContainer.appendChild(rowElement);
         }
 
@@ -579,7 +579,14 @@
             if (selectedRows.length === 0) return;
 
             chartContainer.innerHTML = '';
-            chartContainer.style.backgroundColor = backgroundColor;
+
+            // Handle duochrome mode
+            if (duochromeEnabled) {
+                chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+            } else {
+                chartContainer.style.backgroundColor = backgroundColor;
+            }
+
             chartContainer.style.display = 'block';
 
             const sortedRows = [...selectedRows].sort((a, b) => b - a);
@@ -588,7 +595,7 @@
             sortedRows.forEach((logMAR, index) => {
                 const row = document.createElement('div');
                 row.classList.add('cchart-row');
-                row.style.backgroundColor = backgroundColor;
+                row.style.backgroundColor = duochromeEnabled ? 'transparent' : backgroundColor;
 
                 const labelDiv = document.createElement('div');
                 labelDiv.classList.add('acuity-label');
@@ -612,20 +619,17 @@
                 lettersContainer.classList.add('letters-container');
 
                 const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
-                const cDiv = document.createElement('div');
-                cDiv.classList.add('c-letter');
-                cDiv.style.fontSize = `${fontSize.toFixed(2)}pt`;
-                cDiv.style.color = letterColor;
-                cDiv.innerHTML = `<svg viewBox="0 0 100 100" width="${fontSize}pt" height="${fontSize}pt" style="display: block;">
-                    <circle cx="50" cy="50" r="45" fill="none" stroke="${letterColor}" stroke-width="10"/>
-                    <rect x="48" y="5" width="4" height="20" fill="${backgroundColor}"/>
-                </svg>`;
+                const letterSpan = document.createElement('span');
+                letterSpan.classList.add('c-letter');
+                letterSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
+                letterSpan.style.color = letterColor;
+                letterSpan.textContent = 'C';
 
                 const rotation = getRandomOrientation();
-                cDiv.style.transform = `rotate(${rotation}deg)`;
-                cDiv.style.display = 'inline-block';
+                letterSpan.style.transform = `rotate(${rotation}deg)`;
+                letterSpan.style.display = 'inline-block';
 
-                lettersContainer.appendChild(cDiv);
+                lettersContainer.appendChild(letterSpan);
                 row.appendChild(labelDiv);
                 row.appendChild(lettersContainer);
                 chartContainer.appendChild(row);
