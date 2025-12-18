@@ -211,13 +211,13 @@
             letterSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
             letterSpan.style.color = letterColor;
             letterSpan.textContent = char;
-            
+
             // Apply mirror effect: flip horizontally
             if (mirrorEffect) {
                 letterSpan.style.transform = 'scaleX(-1)';
                 letterSpan.style.display = 'inline-block';
             }
-            
+
             lettersContainer.appendChild(letterSpan);
 
             row.appendChild(labelDiv);
