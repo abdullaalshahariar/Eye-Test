@@ -75,6 +75,8 @@
             flex: 1;
             padding: 20px;
             overflow: auto;
+            display: flex;
+            flex-direction: column;
         }
 
         #chart-container {
@@ -83,7 +85,7 @@
             padding: 40px;
             border-radius: 10px;
             box-sizing: border-box;
-            min-height: 400px;
+            flex: 1;
         }
 
         .symbol-row {
@@ -196,8 +198,11 @@
 <body>
     <div class="header">
         <h1>Pediatric Visual Acuity Chart</h1>
-        <div class="header-buttons">
-            <button id="duochrome-toggle">🔴🟢 Duochrome: OFF</button>
+        <div class="header-buttons"> <button id="horizontal-line-btn">📏 Horizontal Line</button>
+            <button id="vertical-line-btn">📐 Vertical Line</button>
+            <button id="larger-btn" style="display:none;">+ Larger</button>
+            <button id="smaller-btn" style="display:none;">- Smaller</button> <button id="duochrome-toggle">🔴🟢
+                Duochrome: OFF</button>
             <button onclick="window.history.back()">← Back</button>
             <button onclick="regenerateChart()">🔄 Refresh</button>
         </div>
@@ -527,6 +532,217 @@
                 duochromeToggle.classList.remove('primary');
             }
         });
+
+        // Horizontal and Vertical Line Mode functionality
+        let currentMode = 'normal';
+        let currentLogmarIndex = 0;
+        let availableLogmars = [];
+
+        const horizontalLineBtn = document.getElementById('horizontal-line-btn');
+        const verticalLineBtn = document.getElementById('vertical-line-btn');
+        const largerBtn = document.getElementById('larger-btn');
+        const smallerBtn = document.getElementById('smaller-btn');
+
+        horizontalLineBtn.addEventListener('click', function () {
+            if (currentMode === 'horizontal') {
+                currentMode = 'normal';
+                largerBtn.style.display = 'none';
+                smallerBtn.style.display = 'none';
+                horizontalLineBtn.classList.remove('primary');
+
+                chartContainer.style.display = '';
+                chartContainer.style.alignItems = '';
+                chartContainer.style.justifyContent = '';
+                chartContainer.style.minHeight = '';
+
+                loadAndDisplayChart();
+
+                // Re-apply duochrome if it was enabled
+                if (duochromeEnabled) {
+                    const rows = chartContainer.querySelectorAll('.alphabet-row');
+                    const lettersContainers = chartContainer.querySelectorAll('.letters-container');
+
+                    if (lettersContainers.length > 0) {
+                        const firstContainer = lettersContainers[0];
+                        const containerRect = chartContainer.getBoundingClientRect();
+                        const lettersRect = firstContainer.getBoundingClientRect();
+
+                        const lettersCenter = lettersRect.left + lettersRect.width / 2 - containerRect.left;
+                        const containerWidth = containerRect.width;
+                        const centerPercent = (lettersCenter / containerWidth * 100).toFixed(2);
+
+                        chartContainer.style.background = `linear-gradient(to right, #D32F2F 0%, #D32F2F ${centerPercent}%, #388E3C ${centerPercent}%, #388E3C 100%)`;
+                    }
+                    rows.forEach(row => row.style.backgroundColor = 'transparent');
+                }
+            } else {
+                currentMode = 'horizontal';
+                currentLogmarIndex = 0;
+                showHorizontalLine();
+                largerBtn.style.display = 'inline-block';
+                smallerBtn.style.display = 'inline-block';
+                horizontalLineBtn.classList.add('primary');
+                verticalLineBtn.classList.remove('primary');
+            }
+        });
+
+        verticalLineBtn.addEventListener('click', function () {
+            if (currentMode === 'vertical') {
+                currentMode = 'normal';
+                largerBtn.style.display = 'none';
+                smallerBtn.style.display = 'none';
+                verticalLineBtn.classList.remove('primary');
+
+                chartContainer.style.display = '';
+                chartContainer.style.alignItems = '';
+                chartContainer.style.justifyContent = '';
+                chartContainer.style.minHeight = '';
+
+                loadAndDisplayChart();
+
+                // Re-apply duochrome if it was enabled
+                if (duochromeEnabled) {
+                    const rows = chartContainer.querySelectorAll('.alphabet-row');
+                    const lettersContainers = chartContainer.querySelectorAll('.letters-container');
+
+                    if (lettersContainers.length > 0) {
+                        const firstContainer = lettersContainers[0];
+                        const containerRect = chartContainer.getBoundingClientRect();
+                        const lettersRect = firstContainer.getBoundingClientRect();
+
+                        const lettersCenter = lettersRect.left + lettersRect.width / 2 - containerRect.left;
+                        const containerWidth = containerRect.width;
+                        const centerPercent = (lettersCenter / containerWidth * 100).toFixed(2);
+
+                        chartContainer.style.background = `linear-gradient(to right, #D32F2F 0%, #D32F2F ${centerPercent}%, #388E3C ${centerPercent}%, #388E3C 100%)`;
+                    }
+                    rows.forEach(row => row.style.backgroundColor = 'transparent');
+                }
+            } else {
+                currentMode = 'vertical';
+                showVerticalLine();
+                largerBtn.style.display = 'none';
+                smallerBtn.style.display = 'none';
+                horizontalLineBtn.classList.remove('primary');
+                verticalLineBtn.classList.add('primary');
+            }
+        });
+
+        largerBtn.addEventListener('click', function () {
+            if (currentMode === 'horizontal' && currentLogmarIndex > 0) {
+                currentLogmarIndex--;
+                showHorizontalLine();
+            }
+        });
+
+        smallerBtn.addEventListener('click', function () {
+            if (currentMode === 'horizontal' && currentLogmarIndex < availableLogmars.length - 1) {
+                currentLogmarIndex++;
+                showHorizontalLine();
+            }
+        });
+
+        function showHorizontalLine() {
+            const result = loadSettings();
+            if (!result.success) return;
+
+            const settings = result.settings;
+            const distance = parseFloat(settings.distance) || 6;
+            const scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            const symbolColor = settings.letterColor || '#000000';
+            const distribution = settings.distribution || 'etdrs';
+            const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+
+            if (selectedRows.length === 0) return;
+
+            availableLogmars = [...selectedRows].sort((a, b) => b - a);
+
+            if (currentLogmarIndex >= availableLogmars.length) {
+                currentLogmarIndex = availableLogmars.length - 1;
+            }
+
+            const targetLogMAR = availableLogmars[currentLogmarIndex];
+
+            chartContainer.innerHTML = '';
+
+            // Handle duochrome mode
+            if (duochromeEnabled) {
+                chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+            } else {
+                chartContainer.style.backgroundColor = '#ffffff';
+            }
+
+            chartContainer.style.display = 'flex';
+            chartContainer.style.alignItems = 'center';
+            chartContainer.style.justifyContent = 'center';
+            chartContainer.style.minHeight = '100%';
+
+            const labelColor = '#000000';
+            const rowElement = generateSymbolRow(targetLogMAR, distance, scalingFactor, symbolColor, '#ffffff', labelColor, distribution, null);
+            chartContainer.appendChild(rowElement);
+        }
+
+        function showVerticalLine() {
+            const result = loadSettings();
+            if (!result.success) return;
+
+            const settings = result.settings;
+            const distance = parseFloat(settings.distance) || 6;
+            const scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            const symbolColor = settings.letterColor || '#000000';
+            const backgroundColor = settings.backgroundColor || '#ffffff';
+            const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+
+            if (selectedRows.length === 0) return;
+
+            chartContainer.innerHTML = '';
+            chartContainer.style.backgroundColor = backgroundColor;
+            chartContainer.style.display = 'block';
+
+            const sortedRows = [...selectedRows].sort((a, b) => b - a);
+            const labelColor = getContrastColor(backgroundColor);
+            const symbols = ['🍎', '🚗', '⭐', '🏠', '❤️', '☀️', '🌙', '✈️'];
+
+            sortedRows.forEach((logMAR, index) => {
+                const row = document.createElement('div');
+                row.classList.add('symbol-row');
+                row.style.backgroundColor = backgroundColor;
+
+                const labelDiv = document.createElement('div');
+                labelDiv.classList.add('acuity-label');
+                labelDiv.style.borderRightColor = labelColor;
+
+                const snellenSpan = document.createElement('span');
+                snellenSpan.classList.add('snellen-value');
+                const snellenResult = logMarToSnellen(logMAR, distance);
+                snellenSpan.textContent = typeof snellenResult === 'string' ? snellenResult : snellenResult.primary;
+                snellenSpan.style.color = labelColor;
+
+                const logmarSpan = document.createElement('span');
+                logmarSpan.classList.add('logmar-value');
+                logmarSpan.textContent = `LogMAR: ${logMAR.toFixed(1)}`;
+                logmarSpan.style.color = labelColor;
+
+                labelDiv.appendChild(snellenSpan);
+                labelDiv.appendChild(logmarSpan);
+
+                const symbolsContainer = document.createElement('div');
+                symbolsContainer.classList.add('symbols-container');
+
+                const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
+                const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+
+                const symbolSpan = document.createElement('span');
+                symbolSpan.classList.add('symbol-item');
+                symbolSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
+                symbolSpan.textContent = randomSymbol;
+                symbolsContainer.appendChild(symbolSpan);
+
+                row.appendChild(labelDiv);
+                row.appendChild(symbolsContainer);
+                chartContainer.appendChild(row);
+            });
+        }
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function (e) {

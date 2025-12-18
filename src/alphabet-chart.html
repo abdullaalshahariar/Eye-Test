@@ -75,6 +75,8 @@
             flex: 1;
             padding: 20px;
             overflow: auto;
+            display: flex;
+            flex-direction: column;
         }
 
         #chart-container {
@@ -83,7 +85,7 @@
             padding: 40px;
             border-radius: 10px;
             box-sizing: border-box;
-            min-height: 400px;
+            flex: 1;
         }
 
         #chart-container:empty::before {
@@ -207,6 +209,10 @@
     <div class="header">
         <h1>Alphabet Visual Acuity Chart</h1>
         <div class="header-buttons">
+            <button id="horizontal-line-btn">📏 Horizontal Line</button>
+            <button id="vertical-line-btn">📐 Vertical Line</button>
+            <button id="larger-btn" style="display:none;">+ Larger</button>
+            <button id="smaller-btn" style="display:none;">- Smaller</button>
             <button id="duochrome-toggle">🔴🟢 Duochrome: OFF</button>
             <button onclick="window.history.back()">← Back</button>
             <button onclick="regenerateChart()">🔄 Refresh</button>
@@ -229,7 +235,7 @@
 
         const chartContainer = document.getElementById('chart-container');
 
-        function generateAlphabetRow(logMAR, distance, characters, scalingFactor, letterColor, backgroundColor, labelColor, nextRowFontSize) {
+        function generateAlphabetRow(logMAR, distance, characters, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize) {
             const row = document.createElement('div');
             row.classList.add('alphabet-row');
             row.style.backgroundColor = backgroundColor;
@@ -253,7 +259,7 @@
             labelDiv.appendChild(snellenSpan);
             labelDiv.appendChild(logmarSpan);
 
-            // Letters Container - Always 5 letters
+            // Letters Container
             const lettersContainer = document.createElement('div');
             lettersContainer.classList.add('letters-container');
 
@@ -264,8 +270,23 @@
                 row.style.marginTop = `${rowSpacing}pt`;
             }
 
-            // Always use 5 letters per row
-            const lettersPerRow = 5;
+            // Determine letters per row based on distribution
+            let lettersPerRow;
+            if (distribution === 'snellen') {
+                if (logMAR >= 0.8) lettersPerRow = 1;
+                else if (logMAR >= 0.6) lettersPerRow = 2;
+                else if (logMAR >= 0.4) lettersPerRow = 3;
+                else if (logMAR >= 0.2) lettersPerRow = 4;
+                else lettersPerRow = 5;
+            } else if (distribution === 'etdrs') {
+                lettersPerRow = 5;
+            } else if (distribution === 'linear') {
+                lettersPerRow = Math.max(1, Math.round((1.0 - logMAR) * 5) + 1);
+                lettersPerRow = Math.min(lettersPerRow, 6);
+            } else {
+                lettersPerRow = 5;
+            }
+
             const shuffledChars = shuffleArray([...characters]);
             const charsForRow = [];
             for (let i = 0; i < lettersPerRow; i++) {
@@ -308,6 +329,7 @@
             const scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
             const letterColor = settings.letterColor || '#000000';
             const backgroundColor = settings.backgroundColor || '#ffffff';
+            const distribution = settings.distribution || 'etdrs';
             const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
 
             // Validation
@@ -337,7 +359,7 @@
 
             sortedRows.forEach((logMAR, index) => {
                 const nextRowFontSize = index + 1 < fontSizes.length ? fontSizes[index + 1] : null;
-                const rowElement = generateAlphabetRow(logMAR, distance, characters, scalingFactor, letterColor, backgroundColor, labelColor, nextRowFontSize);
+                const rowElement = generateAlphabetRow(logMAR, distance, characters, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize);
                 chartContainer.appendChild(rowElement);
             });
         }
@@ -400,6 +422,248 @@
                 duochromeToggle.classList.remove('primary');
             }
         });
+
+        // Horizontal and Vertical Line Mode functionality
+        let currentMode = 'normal'; // 'normal', 'horizontal', 'vertical'
+        let currentLogmarIndex = 0;
+        let availableLogmars = [];
+
+        const horizontalLineBtn = document.getElementById('horizontal-line-btn');
+        const verticalLineBtn = document.getElementById('vertical-line-btn');
+        const largerBtn = document.getElementById('larger-btn');
+        const smallerBtn = document.getElementById('smaller-btn');
+
+        horizontalLineBtn.addEventListener('click', function () {
+            if (currentMode === 'horizontal') {
+                // Already in horizontal mode, go back to normal
+                currentMode = 'normal';
+                largerBtn.style.display = 'none';
+                smallerBtn.style.display = 'none';
+                horizontalLineBtn.classList.remove('primary');
+
+                // Reset chartContainer styles
+                chartContainer.style.display = '';
+                chartContainer.style.alignItems = '';
+                chartContainer.style.justifyContent = '';
+                chartContainer.style.minHeight = '';
+
+                loadAndDisplayChart();
+
+                // Re-apply duochrome if it was enabled
+                if (duochromeEnabled) {
+                    const rows = chartContainer.querySelectorAll('.alphabet-row');
+                    const lettersContainers = chartContainer.querySelectorAll('.letters-container');
+
+                    if (lettersContainers.length > 0) {
+                        const firstContainer = lettersContainers[0];
+                        const containerRect = chartContainer.getBoundingClientRect();
+                        const lettersRect = firstContainer.getBoundingClientRect();
+
+                        const lettersCenter = lettersRect.left + lettersRect.width / 2 - containerRect.left;
+                        const containerWidth = containerRect.width;
+                        const centerPercent = (lettersCenter / containerWidth * 100).toFixed(2);
+
+                        chartContainer.style.background = `linear-gradient(to right, #D32F2F 0%, #D32F2F ${centerPercent}%, #388E3C ${centerPercent}%, #388E3C 100%)`;
+                    }
+                    rows.forEach(row => row.style.backgroundColor = 'transparent');
+                }
+            } else {
+                // Switch to horizontal mode
+                currentMode = 'horizontal';
+                currentLogmarIndex = 0;
+                showHorizontalLine();
+                largerBtn.style.display = 'inline-block';
+                smallerBtn.style.display = 'inline-block';
+                horizontalLineBtn.classList.add('primary');
+                verticalLineBtn.classList.remove('primary');
+            }
+        });
+
+        verticalLineBtn.addEventListener('click', function () {
+            if (currentMode === 'vertical') {
+                // Already in vertical mode, go back to normal
+                currentMode = 'normal';
+                largerBtn.style.display = 'none';
+                smallerBtn.style.display = 'none';
+                verticalLineBtn.classList.remove('primary');
+
+                // Reset chartContainer styles
+                chartContainer.style.display = '';
+                chartContainer.style.alignItems = '';
+                chartContainer.style.justifyContent = '';
+                chartContainer.style.minHeight = '';
+
+                loadAndDisplayChart();
+
+                // Re-apply duochrome if it was enabled
+                if (duochromeEnabled) {
+                    const rows = chartContainer.querySelectorAll('.alphabet-row');
+                    const lettersContainers = chartContainer.querySelectorAll('.letters-container');
+
+                    if (lettersContainers.length > 0) {
+                        const firstContainer = lettersContainers[0];
+                        const containerRect = chartContainer.getBoundingClientRect();
+                        const lettersRect = firstContainer.getBoundingClientRect();
+
+                        const lettersCenter = lettersRect.left + lettersRect.width / 2 - containerRect.left;
+                        const containerWidth = containerRect.width;
+                        const centerPercent = (lettersCenter / containerWidth * 100).toFixed(2);
+
+                        chartContainer.style.background = `linear-gradient(to right, #D32F2F 0%, #D32F2F ${centerPercent}%, #388E3C ${centerPercent}%, #388E3C 100%)`;
+                    }
+                    rows.forEach(row => row.style.backgroundColor = 'transparent');
+                }
+            } else {
+                // Switch to vertical mode
+                currentMode = 'vertical';
+                showVerticalLine();
+                largerBtn.style.display = 'none';
+                smallerBtn.style.display = 'none';
+                horizontalLineBtn.classList.remove('primary');
+                verticalLineBtn.classList.add('primary');
+            }
+        });
+
+        largerBtn.addEventListener('click', function () {
+            if (currentMode === 'horizontal' && currentLogmarIndex > 0) {
+                currentLogmarIndex--;
+                showHorizontalLine();
+            }
+        });
+
+        smallerBtn.addEventListener('click', function () {
+            if (currentMode === 'horizontal' && currentLogmarIndex < availableLogmars.length - 1) {
+                currentLogmarIndex++;
+                showHorizontalLine();
+            }
+        });
+
+        function showHorizontalLine() {
+            const result = loadSettings();
+            if (!result.success) return;
+
+            const settings = result.settings;
+            const distance = parseFloat(settings.distance) || 6;
+            const letterSetKey = settings.letterSet || 'ETDRS';
+            const customLettersValue = settings.customLetters || '';
+            const scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            const letterColor = settings.letterColor || '#000000';
+            const distribution = settings.distribution || 'etdrs';
+            const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+
+            if (selectedRows.length === 0) return;
+
+            const characters = getCharacterSet(letterSetKey, customLettersValue);
+            if (characters.length === 0) return;
+
+            // Sort from largest to smallest (highest logMAR to lowest)
+            availableLogmars = [...selectedRows].sort((a, b) => b - a);
+
+            // Ensure index is within bounds
+            if (currentLogmarIndex >= availableLogmars.length) {
+                currentLogmarIndex = availableLogmars.length - 1;
+            }
+
+            const targetLogMAR = availableLogmars[currentLogmarIndex];
+
+            chartContainer.innerHTML = '';
+
+            // Handle duochrome mode
+            if (duochromeEnabled) {
+                chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+            } else {
+                chartContainer.style.backgroundColor = '#ffffff';
+            }
+
+            chartContainer.style.display = 'flex';
+            chartContainer.style.alignItems = 'center';
+            chartContainer.style.justifyContent = 'center';
+            chartContainer.style.minHeight = '100%';
+
+            const labelColor = '#000000';
+            const fontSize = calculateFontSize(targetLogMAR, distance, scalingFactor);
+
+            const rowElement = generateAlphabetRow(targetLogMAR, distance, characters, scalingFactor, letterColor, duochromeEnabled ? 'transparent' : '#ffffff', labelColor, distribution, null);
+            chartContainer.appendChild(rowElement);
+        }
+
+        function showVerticalLine() {
+            const result = loadSettings();
+            if (!result.success) return;
+
+            const settings = result.settings;
+            const distance = parseFloat(settings.distance) || 6;
+            const letterSetKey = settings.letterSet || 'ETDRS';
+            const customLettersValue = settings.customLetters || '';
+            const scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            const letterColor = settings.letterColor || '#000000';
+            const backgroundColor = settings.backgroundColor || '#ffffff';
+            const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+
+            if (selectedRows.length === 0) return;
+
+            const characters = getCharacterSet(letterSetKey, customLettersValue);
+            if (characters.length === 0) return;
+
+            chartContainer.innerHTML = '';
+
+            // Handle duochrome mode
+            if (duochromeEnabled) {
+                chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+            } else {
+                chartContainer.style.backgroundColor = backgroundColor;
+            }
+
+            chartContainer.style.display = 'block';
+
+            const sortedRows = [...selectedRows].sort((a, b) => b - a);
+            const labelColor = getContrastColor(backgroundColor);
+
+            // Show all rows vertically but with just 1 letter per row
+            sortedRows.forEach((logMAR, index) => {
+                const row = document.createElement('div');
+                row.classList.add('alphabet-row');
+                row.style.backgroundColor = duochromeEnabled ? 'transparent' : backgroundColor;
+
+                // Acuity Label
+                const labelDiv = document.createElement('div');
+                labelDiv.classList.add('acuity-label');
+                labelDiv.style.borderRightColor = labelColor;
+
+                const snellenSpan = document.createElement('span');
+                snellenSpan.classList.add('snellen-value');
+                const snellenResult = logMarToSnellen(logMAR, distance);
+                snellenSpan.textContent = typeof snellenResult === 'string' ? snellenResult : snellenResult.primary;
+                snellenSpan.style.color = labelColor;
+
+                const logmarSpan = document.createElement('span');
+                logmarSpan.classList.add('logmar-value');
+                logmarSpan.textContent = `LogMAR: ${logMAR.toFixed(1)}`;
+                logmarSpan.style.color = labelColor;
+
+                labelDiv.appendChild(snellenSpan);
+                labelDiv.appendChild(logmarSpan);
+
+                // Single letter
+                const lettersContainer = document.createElement('div');
+                lettersContainer.classList.add('letters-container');
+
+                const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
+                const shuffledChars = shuffleArray([...characters]);
+                const char = shuffledChars[0];
+
+                const letterSpan = document.createElement('span');
+                letterSpan.classList.add('alphabet-letter');
+                letterSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
+                letterSpan.style.color = letterColor;
+                letterSpan.textContent = char;
+                lettersContainer.appendChild(letterSpan);
+
+                row.appendChild(labelDiv);
+                row.appendChild(lettersContainer);
+                chartContainer.appendChild(row);
+            });
+        }
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function (e) {
