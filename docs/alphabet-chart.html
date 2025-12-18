@@ -235,7 +235,7 @@
 
         const chartContainer = document.getElementById('chart-container');
 
-        function generateAlphabetRow(logMAR, distance, characters, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize) {
+        function generateAlphabetRow(logMAR, distance, characters, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize, mirrorEffect = false) {
             const row = document.createElement('div');
             row.classList.add('alphabet-row');
             row.style.backgroundColor = backgroundColor;
@@ -263,7 +263,9 @@
             const lettersContainer = document.createElement('div');
             lettersContainer.classList.add('letters-container');
 
-            const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
+            // Apply mirror effect: use half distance for calculation (makes letters smaller)
+            const effectiveDistance = mirrorEffect ? distance / 2 : distance;
+            const fontSize = calculateFontSize(logMAR, effectiveDistance, scalingFactor);
 
             if (nextRowFontSize) {
                 const rowSpacing = nextRowFontSize * 0.75;
@@ -300,6 +302,13 @@
                 letterSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
                 letterSpan.style.color = letterColor;
                 letterSpan.textContent = char;
+
+                // Apply mirror effect: flip horizontally
+                if (mirrorEffect) {
+                    letterSpan.style.transform = 'scaleX(-1)';
+                    letterSpan.style.display = 'inline-block';
+                }
+
                 lettersContainer.appendChild(letterSpan);
             });
 
@@ -331,6 +340,7 @@
             const backgroundColor = settings.backgroundColor || '#ffffff';
             const distribution = settings.distribution || 'etdrs';
             const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+            const mirrorEffect = settings.mirrorEffect || false;
 
             // Validation
             if (selectedRows.length === 0) {
@@ -359,7 +369,7 @@
 
             sortedRows.forEach((logMAR, index) => {
                 const nextRowFontSize = index + 1 < fontSizes.length ? fontSizes[index + 1] : null;
-                const rowElement = generateAlphabetRow(logMAR, distance, characters, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize);
+                const rowElement = generateAlphabetRow(logMAR, distance, characters, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize, mirrorEffect);
                 chartContainer.appendChild(rowElement);
             });
         }
@@ -550,6 +560,7 @@
             const letterColor = settings.letterColor || '#000000';
             const distribution = settings.distribution || 'etdrs';
             const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+            const mirrorEffect = settings.mirrorEffect || false;
 
             if (selectedRows.length === 0) return;
 
@@ -583,7 +594,7 @@
             const labelColor = '#000000';
             const fontSize = calculateFontSize(targetLogMAR, distance, scalingFactor);
 
-            const rowElement = generateAlphabetRow(targetLogMAR, distance, characters, scalingFactor, letterColor, duochromeEnabled ? 'transparent' : '#ffffff', labelColor, distribution, null);
+            const rowElement = generateAlphabetRow(targetLogMAR, distance, characters, scalingFactor, letterColor, duochromeEnabled ? 'transparent' : '#ffffff', labelColor, distribution, null, mirrorEffect);
             chartContainer.appendChild(rowElement);
         }
 
@@ -599,6 +610,7 @@
             const letterColor = settings.letterColor || '#000000';
             const backgroundColor = settings.backgroundColor || '#ffffff';
             const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+            const mirrorEffect = settings.mirrorEffect || false;
 
             if (selectedRows.length === 0) return;
 
@@ -648,7 +660,9 @@
                 const lettersContainer = document.createElement('div');
                 lettersContainer.classList.add('letters-container');
 
-                const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
+                // Apply mirror effect: use half distance for calculation (makes letters smaller)
+                const effectiveDistance = mirrorEffect ? distance / 2 : distance;
+                const fontSize = calculateFontSize(logMAR, effectiveDistance, scalingFactor);
                 const shuffledChars = shuffleArray([...characters]);
                 const char = shuffledChars[0];
 
@@ -657,6 +671,13 @@
                 letterSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
                 letterSpan.style.color = letterColor;
                 letterSpan.textContent = char;
+
+                // Apply mirror effect: flip horizontally
+                if (mirrorEffect) {
+                    letterSpan.style.transform = 'scaleX(-1)';
+                    letterSpan.style.display = 'inline-block';
+                }
+
                 lettersContainer.appendChild(letterSpan);
 
                 row.appendChild(labelDiv);

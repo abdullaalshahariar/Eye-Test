@@ -248,7 +248,8 @@
                 letterColor: settings.letterColor || '#000000',
                 backgroundColor: settings.backgroundColor || '#ffffff',
                 distribution: 'etdrs', // Force ETDRS (5 letters per row) for LogMAR only
-                selectedRows: (settings.selectedRows || []).map(v => parseFloat(v))
+                selectedRows: (settings.selectedRows || []).map(v => parseFloat(v)),
+                mirrorEffect: settings.mirrorEffect || false
             };
 
             const result2 = generateChart(chartSettings, chartContainer);

@@ -172,7 +172,7 @@
         let availableLogmars = [];
         let duochromeEnabled = false;
 
-        function generateHOTVRow(logMAR, distance, scalingFactor, letterColor, backgroundColor, labelColor) {
+        function generateHOTVRow(logMAR, distance, scalingFactor, letterColor, backgroundColor, labelColor, mirrorEffect = false) {
             const row = document.createElement('div');
             row.classList.add('hotv-row');
             row.style.backgroundColor = backgroundColor;
@@ -200,7 +200,9 @@
             const lettersContainer = document.createElement('div');
             lettersContainer.classList.add('letters-container');
 
-            const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
+            // Apply mirror effect: use half distance for calculation (makes letters smaller)
+            const effectiveDistance = mirrorEffect ? distance / 2 : distance;
+            const fontSize = calculateFontSize(logMAR, effectiveDistance, scalingFactor);
             const shuffledChars = shuffleArray([...hotvLetters]);
             const char = shuffledChars[0];
 
@@ -209,6 +211,13 @@
             letterSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
             letterSpan.style.color = letterColor;
             letterSpan.textContent = char;
+            
+            // Apply mirror effect: flip horizontally
+            if (mirrorEffect) {
+                letterSpan.style.transform = 'scaleX(-1)';
+                letterSpan.style.display = 'inline-block';
+            }
+            
             lettersContainer.appendChild(letterSpan);
 
             row.appendChild(labelDiv);
@@ -234,6 +243,7 @@
             const scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
             const letterColor = settings.letterColor || '#000000';
             const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+            const mirrorEffect = settings.mirrorEffect || false;
 
             if (selectedRows.length === 0) {
                 chartContainer.innerHTML = '<p style="text-align:center; padding: 40px; color: #666;">No rows selected in settings.</p>';
@@ -265,7 +275,7 @@
             chartContainer.style.minHeight = '100%';
 
             const labelColor = '#000000';
-            const rowElement = generateHOTVRow(targetLogMAR, distance, scalingFactor, letterColor, duochromeEnabled ? 'transparent' : '#ffffff', labelColor);
+            const rowElement = generateHOTVRow(targetLogMAR, distance, scalingFactor, letterColor, duochromeEnabled ? 'transparent' : '#ffffff', labelColor, mirrorEffect);
             chartContainer.appendChild(rowElement);
         }
 

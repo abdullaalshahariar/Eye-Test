@@ -241,7 +241,7 @@
         // Pediatric symbols - simple emojis that children can recognize
         const SYMBOLS = ['❤️', '🏠', '🌙', '☀️', '🍎', '🚗', '✈️', '⚽'];
 
-        function generateSymbolRow(logMAR, distance, scalingFactor, symbolColor, backgroundColor, labelColor, distribution, nextRowFontSize, previousSymbols = null) {
+        function generateSymbolRow(logMAR, distance, scalingFactor, symbolColor, backgroundColor, labelColor, distribution, nextRowFontSize, previousSymbols = null, mirrorEffect = false) {
             const row = document.createElement('div');
             row.classList.add('symbol-row');
             row.style.backgroundColor = backgroundColor;
@@ -269,7 +269,9 @@
             const symbolsContainer = document.createElement('div');
             symbolsContainer.classList.add('symbols-container');
 
-            const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
+            // Apply mirror effect: use half distance for calculation (makes symbols smaller)
+            const effectiveDistance = mirrorEffect ? distance / 2 : distance;
+            const fontSize = calculateFontSize(logMAR, effectiveDistance, scalingFactor);
 
             if (nextRowFontSize) {
                 const rowSpacing = nextRowFontSize * 0.75;
@@ -327,6 +329,13 @@
                 symbolWrapper.classList.add('symbol-shape');
                 symbolWrapper.style.fontSize = `${fontSize.toFixed(2)}pt`;
                 symbolWrapper.textContent = symbol;
+
+                // Apply mirror effect: flip horizontally
+                if (mirrorEffect) {
+                    symbolWrapper.style.transform = 'scaleX(-1)';
+                    symbolWrapper.style.display = 'inline-block';
+                }
+
                 symbolsContainer.appendChild(symbolWrapper);
             });
 
@@ -357,6 +366,7 @@
             const backgroundColor = settings.backgroundColor || '#ffffff';
             const distribution = settings.distribution || 'etdrs';
             const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+            const mirrorEffect = settings.mirrorEffect || false;
 
             // Validation
             if (selectedRows.length === 0) {
@@ -374,7 +384,7 @@
             let previousSymbols = null;
             sortedRows.forEach((logMAR, index) => {
                 const nextRowFontSize = index + 1 < fontSizes.length ? fontSizes[index + 1] : null;
-                const rowElement = generateSymbolRow(logMAR, distance, scalingFactor, symbolColor, backgroundColor, labelColor, distribution, nextRowFontSize, previousSymbols);
+                const rowElement = generateSymbolRow(logMAR, distance, scalingFactor, symbolColor, backgroundColor, labelColor, distribution, nextRowFontSize, previousSymbols, mirrorEffect);
                 chartContainer.appendChild(rowElement);
                 previousSymbols = rowElement.selectedSymbols;
             });

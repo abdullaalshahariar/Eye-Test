@@ -77,7 +77,7 @@ export function shuffleArray(array) {
 }
 
 // --- Chart Generation ---
-export function generateRow(logMAR, distance, characters, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize) {
+export function generateRow(logMAR, distance, characters, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize, mirrorEffect = false) {
     const row = document.createElement('div');
     row.classList.add('logmar-row');
     row.style.backgroundColor = backgroundColor;
@@ -105,7 +105,9 @@ export function generateRow(logMAR, distance, characters, scalingFactor, letterC
     const lettersContainer = document.createElement('div');
     lettersContainer.classList.add('letters-container');
 
-    const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
+    // Apply mirror effect: use half distance for calculation (makes letters smaller)
+    const effectiveDistance = mirrorEffect ? distance / 2 : distance;
+    const fontSize = calculateFontSize(logMAR, effectiveDistance, scalingFactor);
 
     if (nextRowFontSize) {
         const rowSpacing = nextRowFontSize * 0.75;
@@ -140,6 +142,13 @@ export function generateRow(logMAR, distance, characters, scalingFactor, letterC
         letterSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
         letterSpan.style.color = letterColor;
         letterSpan.textContent = char;
+
+        // Apply mirror effect: flip horizontally
+        if (mirrorEffect) {
+            letterSpan.style.transform = 'scaleX(-1)';
+            letterSpan.style.display = 'inline-block';
+        }
+
         lettersContainer.appendChild(letterSpan);
     });
 
@@ -159,7 +168,8 @@ export function generateChart(settings, chartContainer) {
         letterColor,
         backgroundColor,
         distribution,
-        selectedRows
+        selectedRows,
+        mirrorEffect
     } = settings;
 
     // Validation
@@ -188,7 +198,7 @@ export function generateChart(settings, chartContainer) {
 
     sortedRows.forEach((logMAR, index) => {
         const nextRowFontSize = index + 1 < fontSizes.length ? fontSizes[index + 1] : null;
-        const rowElement = generateRow(logMAR, distance, characters, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize);
+        const rowElement = generateRow(logMAR, distance, characters, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize, mirrorEffect);
         chartContainer.appendChild(rowElement);
     });
 

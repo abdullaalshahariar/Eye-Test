@@ -241,7 +241,7 @@
             return E_ORIENTATIONS[Math.floor(Math.random() * E_ORIENTATIONS.length)];
         }
 
-        function generateERow(logMAR, distance, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize) {
+        function generateERow(logMAR, distance, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize, mirrorEffect = false) {
             const row = document.createElement('div');
             row.classList.add('echart-row');
             row.style.backgroundColor = backgroundColor;
@@ -269,7 +269,9 @@
             const lettersContainer = document.createElement('div');
             lettersContainer.classList.add('letters-container');
 
-            const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
+            // Apply mirror effect: use half distance for calculation (makes letters smaller)
+            const effectiveDistance = mirrorEffect ? distance / 2 : distance;
+            const fontSize = calculateFontSize(logMAR, effectiveDistance, scalingFactor);
 
             if (nextRowFontSize) {
                 const rowSpacing = nextRowFontSize * 0.75;
@@ -335,6 +337,7 @@
             const backgroundColor = settings.backgroundColor || '#ffffff';
             const distribution = settings.distribution || 'etdrs';
             const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+            const mirrorEffect = settings.mirrorEffect || false;
 
             // Validation
             if (selectedRows.length === 0) {
@@ -351,7 +354,7 @@
 
             sortedRows.forEach((logMAR, index) => {
                 const nextRowFontSize = index + 1 < fontSizes.length ? fontSizes[index + 1] : null;
-                const rowElement = generateERow(logMAR, distance, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize);
+                const rowElement = generateERow(logMAR, distance, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize, mirrorEffect);
                 chartContainer.appendChild(rowElement);
             });
         }

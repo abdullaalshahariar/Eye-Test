@@ -276,7 +276,7 @@
             return dots;
         }
 
-        function generateDotRow(logMAR, distance, scalingFactor, dotColor, backgroundColor, labelColor, distribution, nextRowFontSize) {
+        function generateDotRow(logMAR, distance, scalingFactor, dotColor, backgroundColor, labelColor, distribution, nextRowFontSize, mirrorEffect = false) {
             const row = document.createElement('div');
             row.classList.add('dot-row');
             row.style.backgroundColor = backgroundColor;
@@ -304,7 +304,9 @@
             const dotsContainer = document.createElement('div');
             dotsContainer.classList.add('dots-container');
 
-            const fontSize = calculateFontSize(logMAR, distance, scalingFactor);
+            // Apply mirror effect: use half distance for calculation (makes dots smaller)
+            const effectiveDistance = mirrorEffect ? distance / 2 : distance;
+            const fontSize = calculateFontSize(logMAR, effectiveDistance, scalingFactor);
             const dotSize = fontSize * 0.8; // Dot size
 
             if (nextRowFontSize) {
@@ -400,6 +402,7 @@
             const backgroundColor = settings.backgroundColor || '#ffffff';
             const distribution = settings.distribution || 'etdrs';
             const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+            const mirrorEffect = settings.mirrorEffect || false;
 
             // Validation
             if (selectedRows.length === 0) {
@@ -416,7 +419,7 @@
 
             sortedRows.forEach((logMAR, index) => {
                 const nextRowFontSize = index + 1 < fontSizes.length ? fontSizes[index + 1] : null;
-                const rowElement = generateDotRow(logMAR, distance, scalingFactor, dotColor, backgroundColor, labelColor, distribution, nextRowFontSize);
+                const rowElement = generateDotRow(logMAR, distance, scalingFactor, dotColor, backgroundColor, labelColor, distribution, nextRowFontSize, mirrorEffect);
                 chartContainer.appendChild(rowElement);
             });
         }
