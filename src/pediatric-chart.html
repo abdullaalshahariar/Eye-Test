@@ -559,7 +559,7 @@
 
                 // Re-apply duochrome if it was enabled
                 if (duochromeEnabled) {
-                    const rows = chartContainer.querySelectorAll('.alphabet-row');
+                    const rows = chartContainer.querySelectorAll('.symbol-row');
                     const lettersContainers = chartContainer.querySelectorAll('.letters-container');
 
                     if (lettersContainers.length > 0) {
@@ -602,7 +602,7 @@
 
                 // Re-apply duochrome if it was enabled
                 if (duochromeEnabled) {
-                    const rows = chartContainer.querySelectorAll('.alphabet-row');
+                    const rows = chartContainer.querySelectorAll('.symbol-row');
                     const lettersContainers = chartContainer.querySelectorAll('.letters-container');
 
                     if (lettersContainers.length > 0) {
@@ -678,7 +678,7 @@
             chartContainer.style.minHeight = '100%';
 
             const labelColor = '#000000';
-            const rowElement = generateSymbolRow(targetLogMAR, distance, scalingFactor, symbolColor, '#ffffff', labelColor, distribution, null);
+            const rowElement = generateSymbolRow(targetLogMAR, distance, scalingFactor, symbolColor, duochromeEnabled ? 'transparent' : '#ffffff', labelColor, distribution, null);
             chartContainer.appendChild(rowElement);
         }
 
@@ -696,7 +696,14 @@
             if (selectedRows.length === 0) return;
 
             chartContainer.innerHTML = '';
-            chartContainer.style.backgroundColor = backgroundColor;
+
+            // Handle duochrome mode
+            if (duochromeEnabled) {
+                chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+            } else {
+                chartContainer.style.backgroundColor = backgroundColor;
+            }
+
             chartContainer.style.display = 'block';
 
             const sortedRows = [...selectedRows].sort((a, b) => b - a);
@@ -706,7 +713,7 @@
             sortedRows.forEach((logMAR, index) => {
                 const row = document.createElement('div');
                 row.classList.add('symbol-row');
-                row.style.backgroundColor = backgroundColor;
+                row.style.backgroundColor = duochromeEnabled ? 'transparent' : backgroundColor;
 
                 const labelDiv = document.createElement('div');
                 labelDiv.classList.add('acuity-label');
