@@ -105,8 +105,8 @@ export function generateRow(logMAR, distance, characters, scalingFactor, letterC
     const lettersContainer = document.createElement('div');
     lettersContainer.classList.add('letters-container');
 
-    // Apply mirror effect: use half distance for calculation (makes letters smaller)
-    const effectiveDistance = mirrorEffect ? distance / 2 : distance;
+    // Apply mirror effect: use double distance for calculation (makes letters larger)
+    const effectiveDistance = mirrorEffect ? distance * 2 : distance;
     const fontSize = calculateFontSize(logMAR, effectiveDistance, scalingFactor);
 
     if (nextRowFontSize) {
