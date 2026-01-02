@@ -104,6 +104,16 @@
             border-color: var(--primary-color);
         }
 
+        input[type="checkbox"]:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
+        }
+
+        .setting-item:has(input[type="checkbox"]:focus) label {
+            color: var(--primary-color);
+        }
+
         #custom-letters-container {
             grid-column: span 2;
         }
@@ -135,12 +145,25 @@
             padding: 8px 10px;
             border-radius: 4px;
             border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        .row-checkbox:has(input:focus) {
+            background: #3d3d3d;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
+            transform: translateX(4px);
         }
 
         .row-checkbox input[type="checkbox"] {
             width: 18px;
             height: 18px;
             accent-color: var(--primary-color);
+        }
+
+        .row-checkbox input[type="checkbox"]:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
         }
 
         .row-checkbox label {
@@ -192,9 +215,16 @@
             transition: all 0.2s;
         }
 
-        button:hover {
+        button:hover,
+        button:focus {
             background: #3d3d3d;
             transform: translateY(-2px);
+        }
+
+        button:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
         }
 
         button.primary {
@@ -342,9 +372,6 @@
 
             <div class="calibration-box" id="calibration-section">
                 <h3>Screen Calibration</h3>
-                <p>1. Click "Print Calibration" to print this bar.<br>
-                    2. Measure the printed bar's width with a ruler - it should match the target width below.<br>
-                    3. Adjust the scaling factor until the on-screen bar width matches the printed width.</p>
                 <div id="calibration-letter">E</div>
                 <div class="setting-item" style="max-width: 300px; margin: 0 auto;">
                     <label for="scaling-factor">Scaling Factor</label>
@@ -357,9 +384,7 @@
             </div>
 
             <div class="button-group">
-                <button onclick="saveAndViewChart()" class="success">💾 Save & View Chart</button>
                 <button onclick="saveSettings()">💾 Save Settings</button>
-                <button onclick="loadSettings()">📂 Load Settings</button>
             </div>
 
             <div id="message" class="message"></div>
@@ -536,17 +561,73 @@
 
         scalingFactorInput.addEventListener('input', updateCalibrationDisplay);
 
+        let currentFocusIndex = -1;
+
+        function getAllFocusableElements() {
+            // Get all interactive elements in the order they appear in the DOM
+            const allElements = Array.from(document.querySelectorAll('input, button, select, textarea'));
+            return allElements.filter(el => {
+                // Filter out hidden elements
+                return el.offsetParent !== null && !el.disabled;
+            });
+        }
+
         // Keyboard shortcuts
         document.addEventListener('keydown', function (e) {
+            const focusableElements = getAllFocusableElements();
+
+            // Left/Right arrow navigation
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                
+                const currentlyFocused = document.activeElement;
+                let index = focusableElements.indexOf(currentlyFocused);
+                
+                if (index === -1) {
+                    // Nothing focused, start at beginning
+                    index = 0;
+                } else {
+                    // Move to next/previous
+                    if (e.key === 'ArrowRight') {
+                        index = (index + 1) % focusableElements.length;
+                    } else {
+                        index = (index - 1 + focusableElements.length) % focusableElements.length;
+                    }
+                }
+                
+                if (focusableElements[index]) {
+                    focusableElements[index].focus();
+                    focusableElements[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+
+            // Enter key to activate focused element
+            if (e.key === 'Enter') {
+                const activeEl = document.activeElement;
+                if (activeEl && activeEl.tagName === 'BUTTON') {
+                    e.preventDefault();
+                    activeEl.click();
+                } else if (activeEl && activeEl.tagName === 'INPUT' && activeEl.type === 'checkbox') {
+                    e.preventDefault();
+                    activeEl.checked = !activeEl.checked;
+                }
+            }
+
+            // Spacebar to toggle checkbox or click button
+            if (e.key === ' ') {
+                const activeEl = document.activeElement;
+                if (activeEl && activeEl.tagName === 'INPUT' && activeEl.type === 'checkbox') {
+                    // Default behavior will toggle it
+                } else if (activeEl && activeEl.tagName === 'BUTTON') {
+                    e.preventDefault();
+                    activeEl.click();
+                }
+            }
+
             // Ctrl+P or Cmd+P for Print Calibration
             if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
                 e.preventDefault();
                 printCalibration();
-            }
-            // Ctrl+Enter or Cmd+Enter to Save & View Chart
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                saveAndViewChart();
             }
             // Escape to go back
             if (e.key === 'Escape') {
@@ -561,7 +642,19 @@
         // Try to load saved settings on page load
         const saved = loadFromStorage();
         if (saved.success) {
-            loadSettings();
+            const s = saved.settings;
+            distanceInput.value = s.distance || '6';
+            scalingFactorInput.value = s.scalingFactor || '1.0';
+
+            const mirrorCheckbox = document.getElementById('mirror-effect');
+            mirrorCheckbox.checked = s.mirrorEffect || false;
+
+            const selectedRowValues = s.selectedRows || [];
+            rowOptionsContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = selectedRowValues.includes(checkbox.value);
+            });
+
+            updateCalibrationDisplay();
         }
     </script>
 </body>

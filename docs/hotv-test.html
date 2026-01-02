@@ -336,8 +336,8 @@
                     showHorizontalLine();
                 }
             }
-            // Space or Enter to refresh (get new random letter)
-            if (e.key === ' ' || e.key === 'Enter') {
+            // Space, Enter, or R to refresh (get new random letter)
+            if (e.key === ' ' || e.key === 'Enter' || e.key === 'r' || e.key === 'R') {
                 e.preventDefault();
                 regenerateChart();
             }

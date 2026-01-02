@@ -829,8 +829,27 @@
                     }
                 }
             }
-            // F5 or Ctrl+R to refresh chart
-            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
+            // D for duochrome toggle
+            if (e.key === 'd' || e.key === 'D') {
+                duochromeToggle.click();
+            }
+            // H for horizontal line
+            if (e.key === 'h' || e.key === 'H') {
+                horizontalLineBtn.click();
+            }
+            // V for vertical line
+            if (e.key === 'v' || e.key === 'V') {
+                verticalLineBtn.click();
+            }
+            // S for single letter
+            if (e.key === 's' || e.key === 'S') {
+                // Check if it's not Ctrl+S (save)
+                if (!e.ctrlKey && !e.metaKey) {
+                    singleLetterBtn.click();
+                }
+            }
+            // F5, Ctrl+R, or R to refresh chart
+            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r') || e.key === 'r' || e.key === 'R') {
                 e.preventDefault();
                 regenerateChart();
             }
