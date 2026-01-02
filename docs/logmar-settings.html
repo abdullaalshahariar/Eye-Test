@@ -429,11 +429,11 @@
         }
 
         function updateCalibrationDisplay() {
-            const distance = parseFloat(distanceInput.value) || 6;
             const scalingFactor = parseFloat(scalingFactorInput.value) || 1.0;
 
-            // Calculate base size and multiply by 4 for easier measurement
-            const fontSize = calculateFontSize(0.0, distance, scalingFactor) * 4;
+            // Calibration box should always be fixed size regardless of distance
+            // Using fixed 6m distance for calibration reference
+            const fontSize = calculateFontSize(0.0, 6, scalingFactor) * 4;
             const targetHeightMm = 35; // 7 segments × 5mm = 35mm
 
             // Create simple white box
