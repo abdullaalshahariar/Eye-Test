@@ -355,7 +355,8 @@
             const labelColor = getContrastColor(backgroundColor);
 
             sortedRows.forEach((logMAR, index) => {
-                const nextRowFontSize = index + 1 < fontSizes.length ? fontSizes[index + 1] : null;
+                // Only add spacing between rows, not before the first row
+                const nextRowFontSize = index > 0 && index + 1 < fontSizes.length ? fontSizes[index + 1] : null;
                 const rowElement = generateERow(logMAR, distance, scalingFactor, letterColor, backgroundColor, labelColor, distribution, nextRowFontSize, mirrorEffect);
                 chartContainer.appendChild(rowElement);
             });
