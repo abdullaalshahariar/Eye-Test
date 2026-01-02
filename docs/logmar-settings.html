@@ -579,10 +579,10 @@
             // Left/Right arrow navigation
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                 e.preventDefault();
-                
+
                 const currentlyFocused = document.activeElement;
                 let index = focusableElements.indexOf(currentlyFocused);
-                
+
                 if (index === -1) {
                     // Nothing focused, start at beginning
                     index = 0;
@@ -594,7 +594,7 @@
                         index = (index - 1 + focusableElements.length) % focusableElements.length;
                     }
                 }
-                
+
                 if (focusableElements[index]) {
                     focusableElements[index].focus();
                     focusableElements[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
