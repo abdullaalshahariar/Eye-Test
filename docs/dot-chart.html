@@ -307,7 +307,7 @@
             // Apply mirror effect: use double distance for calculation (makes dots larger)
             const effectiveDistance = mirrorEffect ? distance * 2 : distance;
             const fontSize = calculateFontSize(logMAR, effectiveDistance, scalingFactor);
-            const dotSize = fontSize * 0.8; // Dot size
+            const dotSize = fontSize * 0.2; // Dot size = 1 arc minute (5 * 0.2 = 1)
 
             if (nextRowFontSize) {
                 const rowSpacing = nextRowFontSize * 0.75;
