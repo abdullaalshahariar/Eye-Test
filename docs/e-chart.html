@@ -105,18 +105,19 @@
         }
 
         .acuity-label {
-            padding-right: 10px;
-            margin-right: 10px;
-            border-right: 1px solid;
+            padding-left: 10px;
+            margin-left: 10px;
+            border-left: 1px solid;
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
+            align-items: flex-start;
             justify-content: center;
             gap: 4px;
             width: 80px;
             flex-shrink: 0;
-            text-align: right;
+            text-align: left;
             height: 100%;
+            order: -1;
         }
 
         .letters-container {
@@ -212,6 +213,7 @@
         <div class="header-buttons">
             <button id="horizontal-line-btn">📏 Horizontal Line</button>
             <button id="vertical-line-btn">📐 Vertical Line</button>
+            <button id="single-letter-btn">🔤 Single Letter</button>
             <button id="larger-btn" style="display:none;">+ Larger</button>
             <button id="smaller-btn" style="display:none;">- Smaller</button>
             <button id="duochrome-toggle">🔴🟢 Duochrome: OFF</button>
@@ -360,7 +362,13 @@
         }
 
         window.regenerateChart = function () {
-            loadAndDisplayChart();
+            if (currentMode === 'horizontal') {
+                showHorizontalLine();
+            } else if (currentMode === 'single') {
+                showSingleLetter();
+            } else {
+                loadAndDisplayChart();
+            }
             // Re-apply duochrome if it was enabled
             if (duochromeEnabled) {
                 const chartContainer = document.getElementById('chart-container');
@@ -418,13 +426,14 @@
             }
         });
 
-        // Horizontal and Vertical Line Mode functionality
+        // Horizontal, Vertical, and Single Letter Mode functionality
         let currentMode = 'normal';
         let currentLogmarIndex = 0;
         let availableLogmars = [];
 
         const horizontalLineBtn = document.getElementById('horizontal-line-btn');
         const verticalLineBtn = document.getElementById('vertical-line-btn');
+        const singleLetterBtn = document.getElementById('single-letter-btn');
         const largerBtn = document.getElementById('larger-btn');
         const smallerBtn = document.getElementById('smaller-btn');
 
@@ -513,10 +522,59 @@
             }
         });
 
+        singleLetterBtn.addEventListener('click', function () {
+            if (currentMode === 'single') {
+                // Already in single letter mode, go back to normal
+                currentMode = 'normal';
+                largerBtn.style.display = 'none';
+                smallerBtn.style.display = 'none';
+                singleLetterBtn.classList.remove('primary');
+
+                chartContainer.style.display = '';
+                chartContainer.style.alignItems = '';
+                chartContainer.style.justifyContent = '';
+                chartContainer.style.minHeight = '';
+
+                loadAndDisplayChart();
+
+                // Re-apply duochrome if it was enabled
+                if (duochromeEnabled) {
+                    const rows = chartContainer.querySelectorAll('.echart-row');
+                    const lettersContainers = chartContainer.querySelectorAll('.letters-container');
+
+                    if (lettersContainers.length > 0) {
+                        const firstContainer = lettersContainers[0];
+                        const containerRect = chartContainer.getBoundingClientRect();
+                        const lettersRect = firstContainer.getBoundingClientRect();
+
+                        const lettersCenter = lettersRect.left + lettersRect.width / 2 - containerRect.left;
+                        const containerWidth = containerRect.width;
+                        const centerPercent = (lettersCenter / containerWidth * 100).toFixed(2);
+
+                        chartContainer.style.background = `linear-gradient(to right, #D32F2F 0%, #D32F2F ${centerPercent}%, #388E3C ${centerPercent}%, #388E3C 100%)`;
+                    }
+                    rows.forEach(row => row.style.backgroundColor = 'transparent');
+                }
+            } else {
+                // Switch to single letter mode
+                currentMode = 'single';
+                currentLogmarIndex = 0;
+                showSingleLetter();
+                largerBtn.style.display = 'inline-block';
+                smallerBtn.style.display = 'inline-block';
+                horizontalLineBtn.classList.remove('primary');
+                verticalLineBtn.classList.remove('primary');
+                singleLetterBtn.classList.add('primary');
+            }
+        });
+
         largerBtn.addEventListener('click', function () {
             if (currentMode === 'horizontal' && currentLogmarIndex > 0) {
                 currentLogmarIndex--;
                 showHorizontalLine();
+            } else if (currentMode === 'single' && currentLogmarIndex > 0) {
+                currentLogmarIndex--;
+                showSingleLetter();
             }
         });
 
@@ -524,6 +582,9 @@
             if (currentMode === 'horizontal' && currentLogmarIndex < availableLogmars.length - 1) {
                 currentLogmarIndex++;
                 showHorizontalLine();
+            } else if (currentMode === 'single' && currentLogmarIndex < availableLogmars.length - 1) {
+                currentLogmarIndex++;
+                showSingleLetter();
             }
         });
 
@@ -639,8 +700,133 @@
             });
         }
 
+        function showSingleLetter() {
+            const result = loadSettings();
+            if (!result.success) return;
+
+            const settings = result.settings;
+            const distance = parseFloat(settings.distance) || 6;
+            const scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            const letterColor = settings.letterColor || '#000000';
+            const backgroundColor = settings.backgroundColor || '#ffffff';
+            const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+            const mirrorEffect = settings.mirrorEffect || false;
+
+            if (selectedRows.length === 0) return;
+
+            // Sort from largest to smallest (highest logMAR to lowest)
+            availableLogmars = [...selectedRows].sort((a, b) => b - a);
+
+            // Ensure index is within bounds
+            if (currentLogmarIndex >= availableLogmars.length) {
+                currentLogmarIndex = availableLogmars.length - 1;
+            }
+
+            const targetLogMAR = availableLogmars[currentLogmarIndex];
+
+            chartContainer.innerHTML = '';
+
+            // Handle duochrome mode
+            if (duochromeEnabled) {
+                chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+            } else {
+                chartContainer.style.backgroundColor = backgroundColor;
+            }
+
+            chartContainer.style.display = 'flex';
+            chartContainer.style.alignItems = 'center';
+            chartContainer.style.justifyContent = 'center';
+            chartContainer.style.minHeight = '100%';
+
+            const labelColor = getContrastColor(backgroundColor);
+
+            // Create single E display
+            const row = document.createElement('div');
+            row.classList.add('echart-row');
+            row.style.backgroundColor = duochromeEnabled ? 'transparent' : backgroundColor;
+
+            // Acuity Label
+            const labelDiv = document.createElement('div');
+            labelDiv.classList.add('acuity-label');
+            labelDiv.style.borderRightColor = labelColor;
+
+            const snellenSpan = document.createElement('span');
+            snellenSpan.classList.add('snellen-value');
+            const snellenResult = logMarToSnellen(targetLogMAR, distance);
+            snellenSpan.textContent = typeof snellenResult === 'string' ? snellenResult : snellenResult.primary;
+            snellenSpan.style.color = labelColor;
+
+            const logmarSpan = document.createElement('span');
+            logmarSpan.classList.add('logmar-value');
+            logmarSpan.textContent = `LogMAR: ${targetLogMAR.toFixed(1)}`;
+            logmarSpan.style.color = labelColor;
+
+            labelDiv.appendChild(snellenSpan);
+            labelDiv.appendChild(logmarSpan);
+
+            // Single E letter
+            const lettersContainer = document.createElement('div');
+            lettersContainer.classList.add('letters-container');
+
+            // Apply mirror effect: use double distance for calculation (makes E larger)
+            const effectiveDistance = mirrorEffect ? distance * 2 : distance;
+            const fontSize = calculateFontSize(targetLogMAR, effectiveDistance, scalingFactor);
+
+            const letterSpan = document.createElement('span');
+            letterSpan.classList.add('e-letter');
+            letterSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
+            letterSpan.style.color = letterColor;
+            letterSpan.textContent = 'E';
+
+            // Apply random orientation and mirror effect
+            const rotation = getRandomOrientation();
+            if (mirrorEffect) {
+                letterSpan.style.transform = `rotate(${rotation}deg) scaleX(-1)`;
+            } else {
+                letterSpan.style.transform = `rotate(${rotation}deg)`;
+            }
+            letterSpan.style.display = 'inline-block';
+
+            lettersContainer.appendChild(letterSpan);
+
+            row.appendChild(labelDiv);
+            row.appendChild(lettersContainer);
+            chartContainer.appendChild(row);
+        }
+
         // Keyboard shortcuts
         document.addEventListener('keydown', function (e) {
+            // Arrow keys for navigation in horizontal or single letter mode
+            if (currentMode === 'horizontal' || currentMode === 'single') {
+                if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    if (currentLogmarIndex > 0) {
+                        currentLogmarIndex--;
+                        if (currentMode === 'horizontal') {
+                            showHorizontalLine();
+                        } else {
+                            showSingleLetter();
+                        }
+                    }
+                } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    if (currentLogmarIndex < availableLogmars.length - 1) {
+                        currentLogmarIndex++;
+                        if (currentMode === 'horizontal') {
+                            showHorizontalLine();
+                        } else {
+                            showSingleLetter();
+                        }
+                    }
+                } else if (e.key === ' ') {
+                    e.preventDefault();
+                    if (currentMode === 'horizontal') {
+                        showHorizontalLine();
+                    } else {
+                        showSingleLetter();
+                    }
+                }
+            }
             // F5 or Ctrl+R to refresh chart
             if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
                 e.preventDefault();

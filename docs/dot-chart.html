@@ -75,15 +75,20 @@
             flex: 1;
             padding: 20px;
             overflow: auto;
+            display: flex;
+            flex-direction: column;
         }
 
         #chart-container {
             width: 100%;
+            height: 100%;
             background: white;
             padding: 40px;
             border-radius: 10px;
             box-sizing: border-box;
-            min-height: 400px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         #chart-container:empty::before {
@@ -103,18 +108,19 @@
         }
 
         .acuity-label {
-            padding-right: 10px;
-            margin-right: 10px;
-            border-right: 1px solid;
+            padding-left: 10px;
+            margin-left: 10px;
+            border-left: 1px solid;
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
+            align-items: flex-start;
             justify-content: center;
             gap: 4px;
             width: 80px;
             flex-shrink: 0;
-            text-align: right;
+            text-align: left;
             height: 100%;
+            order: -1;
         }
 
         .dots-container {
@@ -215,6 +221,10 @@
     <div class="header">
         <h1>Dot Visual Acuity Chart</h1>
         <div class="header-buttons">
+            <button id="horizontal-line-btn">📏 Horizontal Line</button>
+            <button id="single-letter-btn">🔤 Single Letter</button>
+            <button id="larger-btn" style="display:none;">+ Larger</button>
+            <button id="smaller-btn" style="display:none;">- Smaller</button>
             <button id="duochrome-toggle">🔴🟢 Duochrome: OFF</button>
             <button onclick="window.history.back()">← Back</button>
             <button onclick="regenerateChart()">🔄 Refresh</button>
@@ -425,7 +435,13 @@
         }
 
         window.regenerateChart = function () {
-            loadAndDisplayChart();
+            if (currentMode === 'horizontal') {
+                showHorizontalLine();
+            } else if (currentMode === 'single') {
+                showSingleLetter();
+            } else {
+                loadAndDisplayChart();
+            }
             // Re-apply duochrome if it was enabled
             if (duochromeEnabled) {
                 const chartContainer = document.getElementById('chart-container');
@@ -447,6 +463,256 @@
             }
         };
 
+        // Horizontal Line and Single Letter Mode functionality
+        let currentMode = 'normal'; // 'normal', 'horizontal', or 'single'
+        let currentLogmarIndex = 0;
+        let availableLogmars = [];
+
+        const horizontalLineBtn = document.getElementById('horizontal-line-btn');
+        const singleLetterBtn = document.getElementById('single-letter-btn');
+        const largerBtn = document.getElementById('larger-btn');
+        const smallerBtn = document.getElementById('smaller-btn');
+
+        horizontalLineBtn.addEventListener('click', function () {
+            if (currentMode === 'horizontal') {
+                // Go back to normal mode
+                currentMode = 'normal';
+                largerBtn.style.display = 'none';
+                smallerBtn.style.display = 'none';
+                horizontalLineBtn.classList.remove('primary');
+
+                chartContainer.style.display = '';
+                chartContainer.style.alignItems = '';
+                chartContainer.style.justifyContent = '';
+                chartContainer.style.minHeight = '';
+
+                loadAndDisplayChart();
+            } else {
+                // Switch to horizontal line mode
+                currentMode = 'horizontal';
+                currentLogmarIndex = 0;
+                showHorizontalLine();
+                largerBtn.style.display = 'inline-block';
+                smallerBtn.style.display = 'inline-block';
+                horizontalLineBtn.classList.add('primary');
+                singleLetterBtn.classList.remove('primary');
+            }
+        });
+
+        singleLetterBtn.addEventListener('click', function () {
+            if (currentMode === 'single') {
+                // Go back to normal mode
+                currentMode = 'normal';
+                largerBtn.style.display = 'none';
+                smallerBtn.style.display = 'none';
+                singleLetterBtn.classList.remove('primary');
+
+                chartContainer.style.display = '';
+                chartContainer.style.alignItems = '';
+                chartContainer.style.justifyContent = '';
+                chartContainer.style.minHeight = '';
+
+                loadAndDisplayChart();
+            } else {
+                // Switch to single letter mode
+                currentMode = 'single';
+                currentLogmarIndex = 0;
+                showSingleLetter();
+                largerBtn.style.display = 'inline-block';
+                smallerBtn.style.display = 'inline-block';
+                singleLetterBtn.classList.add('primary');
+                horizontalLineBtn.classList.remove('primary');
+            }
+        });
+
+        largerBtn.addEventListener('click', function () {
+            if (currentMode === 'horizontal' && currentLogmarIndex > 0) {
+                currentLogmarIndex--;
+                showHorizontalLine();
+            } else if (currentMode === 'single' && currentLogmarIndex > 0) {
+                currentLogmarIndex--;
+                showSingleLetter();
+            }
+        });
+
+        smallerBtn.addEventListener('click', function () {
+            if (currentMode === 'horizontal' && currentLogmarIndex < availableLogmars.length - 1) {
+                currentLogmarIndex++;
+                showHorizontalLine();
+            } else if (currentMode === 'single' && currentLogmarIndex < availableLogmars.length - 1) {
+                currentLogmarIndex++;
+                showSingleLetter();
+            }
+        });
+
+        function showHorizontalLine() {
+            const result = loadSettings();
+            if (!result.success) return;
+
+            const settings = result.settings;
+            const distance = parseFloat(settings.distance) || 6;
+            const scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            const dotColor = settings.letterColor || '#000000';
+            const distribution = settings.distribution || 'etdrs';
+            const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+            const mirrorEffect = settings.mirrorEffect || false;
+
+            if (selectedRows.length === 0) return;
+
+            // Sort from largest to smallest
+            availableLogmars = [...selectedRows].sort((a, b) => b - a);
+
+            if (currentLogmarIndex >= availableLogmars.length) {
+                currentLogmarIndex = availableLogmars.length - 1;
+            }
+
+            const targetLogMAR = availableLogmars[currentLogmarIndex];
+
+            chartContainer.innerHTML = '';
+
+            if (duochromeEnabled) {
+                chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+            } else {
+                chartContainer.style.backgroundColor = '#ffffff';
+            }
+
+            chartContainer.style.display = 'flex';
+            chartContainer.style.alignItems = 'center';
+            chartContainer.style.justifyContent = 'center';
+            chartContainer.style.minHeight = '100%';
+
+            const labelColor = '#000000';
+            const rowElement = generateDotRow(targetLogMAR, distance, scalingFactor, dotColor, duochromeEnabled ? 'transparent' : '#ffffff', labelColor, distribution, null, mirrorEffect);
+            chartContainer.appendChild(rowElement);
+        }
+
+        function showSingleLetter() {
+            const result = loadSettings();
+            if (!result.success) return;
+
+            const settings = result.settings;
+            const distance = parseFloat(settings.distance) || 6;
+            const scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
+            const dotColor = settings.letterColor || '#000000';
+            const backgroundColor = settings.backgroundColor || '#ffffff';
+            const selectedRows = (settings.selectedRows || []).map(v => parseFloat(v));
+            const mirrorEffect = settings.mirrorEffect || false;
+
+            if (selectedRows.length === 0) return;
+
+            availableLogmars = [...selectedRows].sort((a, b) => b - a);
+
+            if (currentLogmarIndex >= availableLogmars.length) {
+                currentLogmarIndex = availableLogmars.length - 1;
+            }
+
+            const targetLogMAR = availableLogmars[currentLogmarIndex];
+
+            chartContainer.innerHTML = '';
+
+            if (duochromeEnabled) {
+                chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+            } else {
+                chartContainer.style.background = backgroundColor;
+            }
+
+            chartContainer.style.display = 'flex';
+            chartContainer.style.alignItems = 'center';
+            chartContainer.style.justifyContent = 'center';
+            chartContainer.style.minHeight = '100%';
+
+            const labelColor = getContrastColor(backgroundColor);
+
+            // Create single dot display with proper row structure like other charts
+            const row = document.createElement('div');
+            row.classList.add('dot-row');
+            row.style.backgroundColor = duochromeEnabled ? 'transparent' : backgroundColor;
+
+            // Acuity Label
+            const labelDiv = document.createElement('div');
+            labelDiv.classList.add('acuity-label');
+            labelDiv.style.borderRightColor = labelColor;
+
+            const snellenSpan = document.createElement('span');
+            snellenSpan.classList.add('snellen-value');
+            const snellenResult = logMarToSnellen(targetLogMAR, distance);
+            snellenSpan.textContent = typeof snellenResult === 'string' ? snellenResult : snellenResult.primary;
+            snellenSpan.style.color = labelColor;
+
+            const logmarSpan = document.createElement('span');
+            logmarSpan.classList.add('logmar-value');
+            logmarSpan.textContent = `LogMAR: ${targetLogMAR.toFixed(1)}`;
+            logmarSpan.style.color = labelColor;
+
+            labelDiv.appendChild(snellenSpan);
+            labelDiv.appendChild(logmarSpan);
+
+            // Dots Container - single box with dots
+            const dotsContainer = document.createElement('div');
+            dotsContainer.classList.add('dots-container');
+
+            const effectiveDistance = mirrorEffect ? distance * 2 : distance;
+            const fontSize = calculateFontSize(targetLogMAR, effectiveDistance, scalingFactor);
+            const dotSize = fontSize * 0.2; // 1 arc minute
+            const boxSize = dotSize * 2.5;
+
+            // Create box with random dots (1-3 dots)
+            const dotsPerBox = Math.floor(Math.random() * 3) + 1;
+            const dotBox = document.createElement('div');
+            dotBox.classList.add('dot-box');
+            dotBox.style.position = 'relative';
+            dotBox.style.width = `${boxSize}pt`;
+            dotBox.style.height = `${boxSize}pt`;
+            dotBox.style.border = duochromeEnabled ? 'none' : '1px solid #ccc';
+            dotBox.style.backgroundColor = duochromeEnabled ? 'transparent' : backgroundColor;
+            dotBox.style.display = 'inline-block';
+
+            const dots = generateRandomDots(boxSize, dotSize, dotsPerBox);
+            dots.forEach(dotPos => {
+                const dot = document.createElement('div');
+                dot.classList.add('dot');
+                dot.style.position = 'absolute';
+                dot.style.width = `${dotSize}pt`;
+                dot.style.height = `${dotSize}pt`;
+                dot.style.borderRadius = '50%';
+                dot.style.backgroundColor = dotColor;
+                dot.style.left = `${dotPos.x}pt`;
+                dot.style.top = `${dotPos.y}pt`;
+                dotBox.appendChild(dot);
+            });
+
+            dotsContainer.appendChild(dotBox);
+
+            row.appendChild(labelDiv);
+            row.appendChild(dotsContainer);
+            chartContainer.appendChild(row);
+        }
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', function (e) {
+            if (currentMode === 'horizontal' || currentMode === 'single') {
+                if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    if (currentLogmarIndex > 0) {
+                        currentLogmarIndex--;
+                        if (currentMode === 'horizontal') showHorizontalLine();
+                        else showSingleLetter();
+                    }
+                } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    if (currentLogmarIndex < availableLogmars.length - 1) {
+                        currentLogmarIndex++;
+                        if (currentMode === 'horizontal') showHorizontalLine();
+                        else showSingleLetter();
+                    }
+                } else if (e.key === ' ') {
+                    e.preventDefault();
+                    if (currentMode === 'horizontal') showHorizontalLine();
+                    else showSingleLetter();
+                }
+            }
+        });
+
         // Duochrome toggle functionality
         let duochromeEnabled = false;
         const duochromeToggle = document.getElementById('duochrome-toggle');
@@ -454,32 +720,101 @@
         duochromeToggle.addEventListener('click', function () {
             duochromeEnabled = !duochromeEnabled;
             const chartContainer = document.getElementById('chart-container');
-            const rows = chartContainer.querySelectorAll('.dot-row');
-            const dotsContainers = chartContainer.querySelectorAll('.dots-container');
 
             if (duochromeEnabled) {
-                // Calculate where the dots-container center is relative to chart-container
-                if (dotsContainers.length > 0) {
-                    const firstContainer = dotsContainers[0];
-                    const containerRect = chartContainer.getBoundingClientRect();
-                    const dotsRect = firstContainer.getBoundingClientRect();
-
-                    const dotsCenter = dotsRect.left + dotsRect.width / 2 - containerRect.left;
-                    const containerWidth = containerRect.width;
-                    const centerPercent = (dotsCenter / containerWidth * 100).toFixed(2);
-
-                    chartContainer.style.background = `linear-gradient(to right, #D32F2F 0%, #D32F2F ${centerPercent}%, #388E3C ${centerPercent}%, #388E3C 100%)`;
-                }
-                rows.forEach(row => row.style.backgroundColor = 'transparent');
                 duochromeToggle.textContent = '🔴🟢 Duochrome: ON';
                 duochromeToggle.classList.add('primary');
             } else {
-                const result = loadSettings();
-                const backgroundColor = result.success ? (result.settings.backgroundColor || '#ffffff') : '#ffffff';
-                chartContainer.style.background = backgroundColor;
-                rows.forEach(row => row.style.backgroundColor = backgroundColor);
                 duochromeToggle.textContent = '🔴🟢 Duochrome: OFF';
                 duochromeToggle.classList.remove('primary');
+            }
+
+            // Apply duochrome to existing content without regenerating
+            if (currentMode === 'horizontal') {
+                // For horizontal mode, apply duochrome styling
+                if (duochromeEnabled) {
+                    chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+                    const rows = chartContainer.querySelectorAll('.dot-row');
+                    rows.forEach(row => row.style.backgroundColor = 'transparent');
+                    const dotBoxes = chartContainer.querySelectorAll('.dot-box');
+                    dotBoxes.forEach(box => {
+                        box.style.backgroundColor = 'transparent';
+                        box.style.border = 'none';
+                    });
+                } else {
+                    const result = loadSettings();
+                    const backgroundColor = result.success ? (result.settings.backgroundColor || '#ffffff') : '#ffffff';
+                    chartContainer.style.background = backgroundColor;
+                    const rows = chartContainer.querySelectorAll('.dot-row');
+                    rows.forEach(row => row.style.backgroundColor = backgroundColor);
+                    const dotBoxes = chartContainer.querySelectorAll('.dot-box');
+                    dotBoxes.forEach(box => {
+                        box.style.backgroundColor = backgroundColor;
+                        box.style.border = '1px solid #ccc';
+                    });
+                }
+            } else if (currentMode === 'single') {
+                // For single letter mode, apply duochrome styling without regenerating
+                if (duochromeEnabled) {
+                    chartContainer.style.background = 'linear-gradient(to right, #D32F2F 0%, #D32F2F 50%, #388E3C 50%, #388E3C 100%)';
+                    const rows = chartContainer.querySelectorAll('.dot-row');
+                    rows.forEach(row => row.style.backgroundColor = 'transparent');
+                    const dotBoxes = chartContainer.querySelectorAll('.dot-box');
+                    dotBoxes.forEach(box => {
+                        box.style.backgroundColor = 'transparent';
+                        box.style.border = 'none';
+                    });
+                } else {
+                    const result = loadSettings();
+                    const backgroundColor = result.success ? (result.settings.backgroundColor || '#ffffff') : '#ffffff';
+                    chartContainer.style.background = backgroundColor;
+                    const rows = chartContainer.querySelectorAll('.dot-row');
+                    rows.forEach(row => row.style.backgroundColor = backgroundColor);
+                    const dotBoxes = chartContainer.querySelectorAll('.dot-box');
+                    dotBoxes.forEach(box => {
+                        box.style.backgroundColor = backgroundColor;
+                        box.style.border = '1px solid #ccc';
+                    });
+                }
+            } else {
+                // Normal mode - apply duochrome to existing content
+                const rows = chartContainer.querySelectorAll('.dot-row');
+                const dotsContainers = chartContainer.querySelectorAll('.dots-container');
+
+                if (duochromeEnabled) {
+                    // Calculate where the dots-container center is relative to chart-container
+                    if (dotsContainers.length > 0) {
+                        const firstContainer = dotsContainers[0];
+                        const containerRect = chartContainer.getBoundingClientRect();
+                        const dotsRect = firstContainer.getBoundingClientRect();
+
+                        const dotsCenter = dotsRect.left + dotsRect.width / 2 - containerRect.left;
+                        const containerWidth = containerRect.width;
+                        const centerPercent = (dotsCenter / containerWidth * 100).toFixed(2);
+
+                        chartContainer.style.background = `linear-gradient(to right, #D32F2F 0%, #D32F2F ${centerPercent}%, #388E3C ${centerPercent}%, #388E3C 100%)`;
+                    }
+                    rows.forEach(row => row.style.backgroundColor = 'transparent');
+
+                    // Make dot boxes transparent and remove border
+                    const dotBoxes = chartContainer.querySelectorAll('.dot-box');
+                    dotBoxes.forEach(box => {
+                        box.style.backgroundColor = 'transparent';
+                        box.style.border = 'none';
+                    });
+                } else {
+                    const result = loadSettings();
+                    const backgroundColor = result.success ? (result.settings.backgroundColor || '#ffffff') : '#ffffff';
+                    chartContainer.style.background = backgroundColor;
+                    rows.forEach(row => row.style.backgroundColor = backgroundColor);
+
+                    // Restore dot box backgrounds and border
+                    const dotBoxes = chartContainer.querySelectorAll('.dot-box');
+                    dotBoxes.forEach(box => {
+                        box.style.backgroundColor = backgroundColor;
+                        box.style.border = '1px solid #ccc';
+                    });
+                }
             }
         });
 
