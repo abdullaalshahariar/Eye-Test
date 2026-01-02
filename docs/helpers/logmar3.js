@@ -9,13 +9,15 @@ export const LOCAL_STORAGE_KEY = 'logmarChartSettings';
 
 // --- Utility Functions ---
 export function logMarToSnellen(logMAR, distance) {
+    // Always use 6m as reference distance for display, regardless of actual testing distance
+    const referenceDistance = 6;
+    const referenceDenominator = Math.round(referenceDistance * Math.pow(10, logMAR));
     const twentyFootEquivalentDenominator = 20 * Math.pow(10, logMAR);
-    const distanceDenominator = Math.round(distance * Math.pow(10, logMAR));
 
-    const primarySnellen = `${distance}/${distanceDenominator}`;
+    const primarySnellen = `${referenceDistance}/${referenceDenominator}`;
     const secondarySnellen = `(20/${Math.round(twentyFootEquivalentDenominator)})`;
 
-    if (distanceDenominator > 600) return `${distance}/>600`;
+    if (referenceDenominator > 600) return `${referenceDistance}/>600`;
 
     return { primary: primarySnellen, secondary: secondarySnellen, full: `${primarySnellen} ${secondarySnellen}` };
 }
@@ -105,8 +107,8 @@ export function generateRow(logMAR, distance, characters, scalingFactor, letterC
     const lettersContainer = document.createElement('div');
     lettersContainer.classList.add('letters-container');
 
-    // Apply mirror effect: use half distance for calculation (makes letters smaller)
-    const effectiveDistance = mirrorEffect ? distance / 2 : distance;
+    // Apply mirror effect: use double distance for calculation (makes letters larger)
+    const effectiveDistance = mirrorEffect ? distance * 2 : distance;
     const fontSize = calculateFontSize(logMAR, effectiveDistance, scalingFactor);
 
     if (nextRowFontSize) {

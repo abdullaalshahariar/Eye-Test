@@ -276,12 +276,6 @@
                     <p>Pediatric letter matching test</p>
                 </div>
 
-                <div class="menu-card" tabindex="0" onclick="window.location.href='duochrome-test.html'">
-                    <div class="icon">🔴🟢</div>
-                    <h3>Duochrome Test</h3>
-                    <p>Red-green refraction test</p>
-                </div>
-
                 <div class="menu-card" tabindex="0" onclick="window.location.href='worth-4-dot.html'">
                     <div class="icon">🔴🟢⚪🟢</div>
                     <h3>Worth 4 Dot Test</h3>
@@ -359,10 +353,13 @@
 
             // Keyboard shortcuts
             document.addEventListener('keydown', function (e) {
-                // Ctrl+S or Cmd+S for Settings
-                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                    e.preventDefault();
-                    window.location.href = 'logmar-settings.html';
+                // S for Settings
+                if (e.key === 's' || e.key === 'S') {
+                    // Check if it's not Ctrl+S (save)
+                    if (!e.ctrlKey && !e.metaKey) {
+                        e.preventDefault();
+                        window.location.href = 'logmar-settings.html';
+                    }
                 }
                 // Escape to go back (if not on main menu)
                 if (e.key === 'Escape' && window.location.pathname.includes('logmar')) {

@@ -98,18 +98,19 @@
         }
 
         .acuity-label {
-            padding-right: 10px;
-            margin-right: 10px;
-            border-right: 1px solid;
+            padding-left: 10px;
+            margin-left: 10px;
+            border-left: 1px solid;
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
+            align-items: flex-start;
             justify-content: center;
             gap: 4px;
             width: 80px;
             flex-shrink: 0;
-            text-align: right;
+            text-align: left;
             height: 100%;
+            order: -1;
         }
 
         .letters-container {
@@ -200,8 +201,8 @@
             const lettersContainer = document.createElement('div');
             lettersContainer.classList.add('letters-container');
 
-            // Apply mirror effect: use half distance for calculation (makes letters smaller)
-            const effectiveDistance = mirrorEffect ? distance / 2 : distance;
+            // Apply mirror effect: use double distance for calculation (makes letters larger)
+            const effectiveDistance = mirrorEffect ? distance * 2 : distance;
             const fontSize = calculateFontSize(logMAR, effectiveDistance, scalingFactor);
             const shuffledChars = shuffleArray([...hotvLetters]);
             const char = shuffledChars[0];
@@ -335,8 +336,8 @@
                     showHorizontalLine();
                 }
             }
-            // Space or Enter to refresh (get new random letter)
-            if (e.key === ' ' || e.key === 'Enter') {
+            // Space, Enter, or R to refresh (get new random letter)
+            if (e.key === ' ' || e.key === 'Enter' || e.key === 'r' || e.key === 'R') {
                 e.preventDefault();
                 regenerateChart();
             }

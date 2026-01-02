@@ -275,8 +275,8 @@
             if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
                 // Let browser handle print
             }
-            // F5 or Ctrl+R to refresh chart
-            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
+            // F5, Ctrl+R, or R to refresh chart
+            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r') || e.key === 'r' || e.key === 'R') {
                 e.preventDefault();
                 regenerateChart();
             }

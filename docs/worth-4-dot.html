@@ -253,13 +253,8 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function (e) {
-            // F5 or Ctrl+R to rotate
-            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
-                e.preventDefault();
-                regenerateTest();
-            }
-            // Space to rotate
-            if (e.key === ' ') {
+            // F5, Ctrl+R, Space, or R to rotate
+            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r') || e.key === ' ' || e.key === 'r' || e.key === 'R') {
                 e.preventDefault();
                 regenerateTest();
             }
