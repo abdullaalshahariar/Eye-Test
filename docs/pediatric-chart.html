@@ -243,8 +243,8 @@
 
         const chartContainer = document.getElementById('chart-container');
 
-        // Pediatric symbols - simple emojis that children can recognize
-        const SYMBOLS = ['❤️', '🏠', '🌙', '☀️', '🍎', '🚗', '✈️', '⚽'];
+        // Pediatric symbols - icon characters from Optician Sans font (Unicode 0x80-0x87)
+        const SYMBOLS = ['\u0080', '\u0081', '\u0082', '\u0083', '\u0084', '\u0085', '\u0086', '\u0087'];
 
         function generateSymbolRow(logMAR, distance, scalingFactor, symbolColor, backgroundColor, labelColor, distribution, nextRowFontSize, previousSymbols = null, mirrorEffect = false) {
             const row = document.createElement('div');
@@ -332,6 +332,7 @@
             selectedSymbols.forEach(symbol => {
                 const symbolWrapper = document.createElement('span');
                 symbolWrapper.classList.add('symbol-shape');
+                symbolWrapper.classList.add('chart-letter');
                 symbolWrapper.style.fontSize = `${fontSize.toFixed(2)}pt`;
                 symbolWrapper.textContent = symbol;
 
@@ -739,7 +740,7 @@
 
             const sortedRows = [...selectedRows].sort((a, b) => b - a);
             const labelColor = getContrastColor(backgroundColor);
-            const symbols = ['❤️', '🏠', '🌙', '☀️', '🍎', '🚗', '✈️', '⚽'];
+            const symbols = ['\u0080', '\u0081', '\u0082', '\u0083', '\u0084', '\u0085', '\u0086', '\u0087'];
 
             let previousSymbol = null;
             sortedRows.forEach((logMAR, index) => {
@@ -782,6 +783,7 @@
 
                 const symbolSpan = document.createElement('span');
                 symbolSpan.classList.add('symbol-item');
+                symbolSpan.classList.add('chart-letter');
                 symbolSpan.style.fontSize = `${fontSize.toFixed(2)}pt`;
                 symbolSpan.textContent = randomSymbol;
                 symbolsContainer.appendChild(symbolSpan);
