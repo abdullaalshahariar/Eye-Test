@@ -190,30 +190,61 @@
         let currentRotation = 0;
 
         function generateWorth4Dots() {
-            const result = loadSettings();
-            let distance = 6;
-            let scalingFactor = 1.0;
-
-            if (result.success) {
-                const settings = result.settings;
-                distance = parseFloat(settings.distance) || 6;
-                scalingFactor = parseFloat(settings.scalingFactor) || 1.0;
-            }
-
-            const currentLogmar = logmarValues[currentLogmarIndex];
-            const fontSize = calculateFontSize(currentLogmar, distance, scalingFactor);
-            const dotSize = fontSize * 3; // Dot size is 3x letter height
-            // Clear previous dots
-            dotsPattern.innerHTML = '';
-
-            // Calculate available space (accounting for some margin)
-            const containerWidth = dotsPattern.clientWidth;
-            const containerHeight = dotsPattern.clientHeight;
+            // Scale dots with container size but prevent overlap by preserving a minimum gap.
+            const containerWidth = dotsPattern.clientWidth || window.innerWidth;
+            const containerHeight = dotsPattern.clientHeight || (window.innerHeight - (document.querySelector('.header')?.clientHeight || 0));
             const minDimension = Math.min(containerWidth, containerHeight);
 
-            // Distance from center - ensure dots fit within container
-            const maxDistance = (minDimension / 2) - dotSize - 40; // 40px margin
-            const distanceFromCenter = Math.min(dotSize * 2, maxDistance);
+            // Desired dot size (fraction of available space). Increase to fill more screen.
+            const desiredDotSize = Math.max(24, Math.floor(minDimension * 0.30));
+
+            // Minimum gap between dot edges (pixels)
+            const minGap = Math.max(12, Math.round(desiredDotSize * 0.18));
+
+            // Safe margin from container edge (smaller to allow larger dots)
+            const edgeMargin = 24;
+
+            // Maximum center distance so dot edges stay inside container
+            // Use dot radius when computing containment: center + radius <= minDimension/2 - edgeMargin
+            // We'll solve for maxD given a tentative dotSize later; for now compute max available radius
+            const maxPossibleCenter = (minDimension / 2) - edgeMargin;
+
+            // We need to pick dotSize and centerDistance D so that:
+            // 1) D + dotRadius <= maxPossibleCenter
+            // 2) Distance between adjacent centers (D*sqrt(2)) >= dotSize + minGap
+            // From 2) required D >= (dotSize + minGap)/sqrt(2)
+            // From 1) D <= maxPossibleCenter - dotRadius = maxPossibleCenter - dotSize/2
+
+            // Compute maximum dot allowed given containment and gap constraints:
+            const maxDotFromContainment = Math.max(16, Math.floor((Math.SQRT2 * maxPossibleCenter) - minGap));
+
+            // Final dot size: don't exceed desired, and cap by containment constraint
+            const dotSizePx = Math.max(8, Math.min(desiredDotSize, maxDotFromContainment));
+
+            // Recompute required and max distances
+            const requiredD = (dotSizePx + minGap) / Math.SQRT2;
+            const maxD = Math.max(0, maxPossibleCenter - dotSizePx / 2);
+
+            // Choose distance from center between requiredD and maxD; prefer a bit larger than requiredD
+            let distanceFromCenter = Math.min(Math.max(requiredD * 1.05, requiredD), maxD);
+            // If there's no room (maxD < requiredD), scale dot down further to fit
+            if (maxD < requiredD) {
+                const adjustedMaxDot = Math.max(8, Math.floor((Math.SQRT2 * maxD) - minGap));
+                // reduce dot size and recompute
+                const newDotSize = Math.max(8, Math.min(dotSizePx, adjustedMaxDot));
+                // update values
+                // (use newDotSize even if it's the same)
+                const newRequiredD = (newDotSize + minGap) / Math.SQRT2;
+                distanceFromCenter = Math.min(maxD, Math.max(newRequiredD, 8));
+                // set dotSizePx variable used below via a local variable
+                // but since dotSizePx is const, assign newDotSize to another var
+                var finalDotSize = newDotSize;
+            } else {
+                var finalDotSize = dotSizePx;
+            }
+
+            // Clear previous dots
+            dotsPattern.innerHTML = '';
 
             // Create 4 dots in diamond pattern
             const dots = [
@@ -226,8 +257,8 @@
             dots.forEach(dotConfig => {
                 const dot = document.createElement('div');
                 dot.classList.add('dot', dotConfig.color);
-                dot.style.width = `${dotSize}pt`;
-                dot.style.height = `${dotSize}pt`;
+                dot.style.width = `${finalDotSize}px`;
+                dot.style.height = `${finalDotSize}px`;
 
                 // Calculate position with rotation
                 const totalAngle = (dotConfig.angle + currentRotation) * (Math.PI / 180);

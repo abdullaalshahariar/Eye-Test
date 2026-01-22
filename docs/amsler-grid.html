@@ -217,59 +217,48 @@
             const lineColor = isInverted ? '#FFFFFF' : '#000000';
             const dotColor = isInverted ? '#FFFFFF' : '#000000';
 
-            // Make grid responsive — fill most of parent container (Amsler grid is not LogMAR)
-            const headerRect = document.querySelector('.header')?.getBoundingClientRect() || { height: 0 };
-            const availableWidth = window.innerWidth;
-            const availableHeight = window.innerHeight - headerRect.height - 24; // leave small margin below header
-            const available = Math.max(120, Math.min(availableWidth, availableHeight));
-            const cssSvgSize = Math.floor(available * 0.95); // 95% of smaller side
-            const paddingCss = Math.max(12, Math.round(cssSvgSize * 0.03)); // minimum padding
-            const gridSizeResponsive = cssSvgSize - paddingCss * 2;
-            const cellSizeResponsive = gridSizeResponsive / gridLines;
-            const strokeWidth = Math.max(1, Math.round(cssSvgSize * 0.002));
-
-            // Apply CSS size and logical viewBox
-            svg.style.width = cssSvgSize + 'px';
-            svg.style.height = cssSvgSize + 'px';
-            svg.setAttribute('viewBox', `0 0 ${cssSvgSize} ${cssSvgSize}`);
-            svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+            // SVG size
+            const svgSize = gridSize + padding * 2;
+            svg.setAttribute('width', svgSize);
+            svg.setAttribute('height', svgSize);
+            svg.setAttribute('viewBox', `0 0 ${svgSize} ${svgSize}`);
 
             // Clear previous content
             svg.innerHTML = '';
 
-            const startX = paddingCss;
-            const startY = paddingCss;
+            const startX = padding;
+            const startY = padding;
 
             // Draw vertical lines
             for (let i = 0; i <= gridLines; i++) {
-                const x = startX + i * cellSizeResponsive;
+                const x = startX + i * cellSize;
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 line.setAttribute('x1', x);
                 line.setAttribute('y1', startY);
                 line.setAttribute('x2', x);
-                line.setAttribute('y2', startY + gridSizeResponsive);
+                line.setAttribute('y2', startY + gridSize);
                 line.setAttribute('stroke', lineColor);
-                line.setAttribute('stroke-width', strokeWidth);
+                line.setAttribute('stroke-width', lineThickness);
                 svg.appendChild(line);
             }
 
             // Draw horizontal lines
             for (let i = 0; i <= gridLines; i++) {
-                const y = startY + i * cellSizeResponsive;
+                const y = startY + i * cellSize;
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 line.setAttribute('x1', startX);
                 line.setAttribute('y1', y);
-                line.setAttribute('x2', startX + gridSizeResponsive);
+                line.setAttribute('x2', startX + gridSize);
                 line.setAttribute('y2', y);
                 line.setAttribute('stroke', lineColor);
-                line.setAttribute('stroke-width', strokeWidth);
+                line.setAttribute('stroke-width', lineThickness);
                 svg.appendChild(line);
             }
 
             // Draw center fixation dot
-            const dotPixelX = startX + (dotX / gridLines) * gridSizeResponsive;
-            const dotPixelY = startY + (dotY / gridLines) * gridSizeResponsive;
-            const dotRadius = cellSizeResponsive / 3;
+            const dotPixelX = startX + (dotX / gridLines) * gridSize;
+            const dotPixelY = startY + (dotY / gridLines) * gridSize;
+            const dotRadius = cellSize / 3;
 
             const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             dot.setAttribute('cx', dotPixelX);
