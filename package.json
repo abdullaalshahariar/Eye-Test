@@ -1,5 +1,5 @@
 {
-  "name": "electron_tutorial",
+  "name": "eye_clinic",
   "version": "1.0.0",
   "description": "Eye Clinic - Visual acuity testing application",
   "homepage": "https://github.com/shahariar/eye-clinic",
@@ -27,7 +27,7 @@
     "files": [
       "main.js",
       "package.json",
-      "src/**/*"
+      "docs/**/*"
     ],
     "linux": {
       "target": [

@@ -186,22 +186,27 @@
         }
 
         function renderChart() {
-            const currentLogmar = logmarValues[currentLogmarIndex];
+            // Responsive sizing: compute chart size from viewport (ignore LogMAR)
+            const headerRect = document.querySelector('.header')?.getBoundingClientRect() || { height: 0 };
+            const availableWidth = window.innerWidth;
+            const availableHeight = window.innerHeight - headerRect.height - 24; // small margin
+            const minDimension = Math.max(240, Math.min(availableWidth, availableHeight));
 
-            // Calculate size based on LogMAR
-            const baseFontSize = calculateFontSize(currentLogmar, distance, scalingFactor);
-            const diameter = baseFontSize * 6;
+            // Diameter scales with viewport; 80% of smaller side by default (adjustable)
+            const diameter = Math.floor(minDimension * 0.8);
+
+            // Keep proportions used previously: baseFontSize * 6 === diameter
+            const baseFontSize = diameter / 6;
             const radius = diameter / 2;
             const lineLength = radius * 0.9;
-            const lineThickness = baseFontSize / 12;
+            const lineThickness = Math.max(1, baseFontSize / 12);
 
-            // Center point - moved down so lines extend upward
-            // Padding should scale with chart size to accommodate arrow and labels
-            const padding = radius * 0.7; // Proportional padding based on radius
+            // Center point and padding scale with chart size
+            const padding = radius * 0.7;
             const centerX = radius + padding;
             const centerY = diameter + padding * 0.6;
 
-            // SVG viewBox and size - padding scales with chart
+            // SVG viewBox and size
             const svgSize = diameter + padding * 2;
             svg.setAttribute('width', svgSize);
             svg.setAttribute('height', svgSize);
