@@ -273,6 +273,106 @@
             display: none;
         }
 
+        /* Password Overlay */
+        .password-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .password-overlay.hidden {
+            display: none;
+        }
+
+        .password-box {
+            background: var(--container-bg);
+            padding: 40px;
+            border-radius: 12px;
+            border: 2px solid var(--primary-color);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .password-box h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .password-input-display {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .password-key {
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            background: #1e1e1e;
+            transition: all 0.2s;
+        }
+
+        .password-key.filled {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .password-hint {
+            color: #888;
+            font-size: 0.9em;
+            margin-top: 20px;
+        }
+
+        .password-error {
+            color: var(--error-color);
+            margin-top: 15px;
+            font-weight: 600;
+        }
+
+        .settings-locked {
+            pointer-events: none;
+            opacity: 0.5;
+            filter: blur(2px);
+        }
+
+        .change-password-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #1e1e1e;
+            border-radius: 8px;
+        }
+
+        .password-keys-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .password-key-display {
+            padding: 8px;
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9em;
+            text-align: center;
+        }
+
         /* Print Styles - Only Calibration Letter */
         @media print {
             @page {
@@ -332,12 +432,29 @@
 </head>
 
 <body>
+    <!-- Password Protection Overlay -->
+    <div id="password-overlay" class="password-overlay">
+        <div class="password-box">
+            <h2>🔒 Enter Password</h2>
+            <p>Enter 4-key sequence to access settings</p>
+            <div class="password-input-display" id="password-display">
+                <div class="password-key" id="key-0"></div>
+                <div class="password-key" id="key-1"></div>
+                <div class="password-key" id="key-2"></div>
+                <div class="password-key" id="key-3"></div>
+            </div>
+            <div class="password-hint">Default: ↑ ↑ ↑ ↑</div>
+            <div class="password-error" id="password-error"></div>
+            <!-- <button onclick="clearPasswordInput()" style="margin-top: 20px;">Clear</button> -->
+        </div>
+    </div>
+
     <div class="header">
         <h1>⚙️ LogMAR Chart Settings</h1>
         <button onclick="window.history.back()">← Back to Menu</button>
     </div>
 
-    <div class="content">
+    <div class="content" id="settings-content">
         <div class="settings-section">
             <h2>Chart Configuration</h2>
 
@@ -379,8 +496,15 @@
                 </div>
                 <div style="margin-top: 15px;">
                     <span>Target Width: </span>
-                    <strong id="target-height" style="color: var(--success-color);">34.9 mm</strong>
+                    <strong id="target-height" style="color: var(--success-color);">35 mm</strong>
                 </div>
+            </div>
+
+            <div class="change-password-section">
+                <h3>Change Password</h3>
+                <p style="font-size: 0.9em; color: #888;" id="change-password-instruction">Click the button below and
+                    then type your new 4-key sequence</p>
+                <button onclick="startPasswordChange()" style="margin-top: 15px;">Change Password</button>
             </div>
 
             <div class="button-group">
@@ -407,6 +531,118 @@
         const calibrationLetterElement = document.getElementById('calibration-letter');
         const targetHeightElement = document.getElementById('target-height');
         const messageElement = document.getElementById('message');
+
+        // Password Management
+        const PASSWORD_STORAGE_KEY = 'logmar_settings_password';
+        const DEFAULT_PASSWORD = ['ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp'];
+        let currentPasswordInput = [];
+        let isUnlocked = false;
+        let isChangingPassword = false;
+        let newPasswordInput = [];
+
+        const keyNameMap = {
+            'ArrowUp': '↑',
+            'ArrowDown': '↓',
+            'ArrowLeft': '←',
+            'ArrowRight': '→',
+            'Enter': '⏎',
+            'Space': '␣',
+            'Escape': 'Esc',
+            'Backspace': '⌫',
+            'Tab': '⇥',
+            'Shift': '⇧',
+            'Control': 'Ctrl',
+            'Alt': 'Alt',
+            'Meta': '⌘'
+        };
+
+        function getStoredPassword() {
+            try {
+                const stored = localStorage.getItem(PASSWORD_STORAGE_KEY);
+                return stored ? JSON.parse(stored) : DEFAULT_PASSWORD;
+            } catch (e) {
+                return DEFAULT_PASSWORD;
+            }
+        }
+
+        function setStoredPassword(password) {
+            localStorage.setItem(PASSWORD_STORAGE_KEY, JSON.stringify(password));
+        }
+
+        function displayPasswordKeys(keys, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            keys.forEach(key => {
+                const div = document.createElement('div');
+                div.className = 'password-key-display';
+                div.textContent = keyNameMap[key] || key;
+                container.appendChild(div);
+            });
+        }
+
+        function updatePasswordDisplay() {
+            for (let i = 0; i < 4; i++) {
+                const keyEl = document.getElementById(`key-${i}`);
+                if (i < currentPasswordInput.length) {
+                    keyEl.classList.add('filled');
+                    keyEl.textContent = keyNameMap[currentPasswordInput[i]] || currentPasswordInput[i];
+                } else {
+                    keyEl.classList.remove('filled');
+                    keyEl.textContent = '';
+                }
+            }
+        }
+
+        function checkPassword() {
+            const storedPassword = getStoredPassword();
+            const inputMatch = JSON.stringify(currentPasswordInput) === JSON.stringify(storedPassword);
+
+            if (inputMatch) {
+                isUnlocked = true;
+                document.getElementById('password-overlay').classList.add('hidden');
+                document.getElementById('settings-content').classList.remove('settings-locked');
+                currentPasswordInput = [];
+            } else {
+                document.getElementById('password-error').textContent = '❌ Incorrect password';
+                setTimeout(() => {
+                    document.getElementById('password-error').textContent = '';
+                    currentPasswordInput = [];
+                    updatePasswordDisplay();
+                }, 1500);
+            }
+        }
+
+        window.clearPasswordInput = function () {
+            currentPasswordInput = [];
+            updatePasswordDisplay();
+            document.getElementById('password-error').textContent = '';
+        };
+
+        window.startPasswordChange = function () {
+            isChangingPassword = true;
+            newPasswordInput = [];
+            document.getElementById('change-password-instruction').textContent = 'Type your new 4-key sequence now... (' + newPasswordInput.length + '/4)';
+            document.getElementById('change-password-instruction').style.color = 'var(--primary-color)';
+            document.getElementById('change-password-instruction').style.fontWeight = '600';
+        };
+
+        function handlePasswordChange(key) {
+            newPasswordInput.push(key);
+            const keyDisplay = newPasswordInput.map(k => keyNameMap[k] || k).join(' ');
+            document.getElementById('change-password-instruction').textContent =
+                'Keys entered: ' + keyDisplay + ' (' + newPasswordInput.length + '/4)';
+
+            if (newPasswordInput.length === 4) {
+                setStoredPassword(newPasswordInput);
+                showMessage('Password changed successfully!', 'success');
+                isChangingPassword = false;
+                newPasswordInput = [];
+                document.getElementById('change-password-instruction').textContent =
+                    'Click the button below and then type your new 4-key sequence';
+                document.getElementById('change-password-instruction').style.color = '#888';
+                document.getElementById('change-password-instruction').style.fontWeight = 'normal';
+            }
+        }
 
         function showMessage(text, type = 'success') {
             messageElement.textContent = text;
@@ -461,9 +697,40 @@
             // Using fixed 6m distance for calibration reference
             const fontSize = calculateFontSize(0.0, 6, scalingFactor) * 4;
             const targetHeightMm = 35; // 7 segments × 5mm = 35mm
+            // Handle password input when overlay is visible
+            if (!isUnlocked && !document.getElementById('password-overlay').classList.contains('hidden')) {
+                // Allow specific keys for password
+                const allowedKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Space', 'Escape', 'Backspace', 'Tab'];
 
-            // Create simple white box
-            const heightPt = fontSize * 0.15;
+                if (allowedKeys.includes(e.key) || (e.key.length === 1)) {
+                    e.preventDefault();
+
+                    if (currentPasswordInput.length < 4) {
+                        currentPasswordInput.push(e.key);
+                        updatePasswordDisplay();
+
+                        if (currentPasswordInput.length === 4) {
+                            setTimeout(checkPassword, 300);
+                        }
+                    }
+                }
+                return;
+            }
+
+            // Handle password change mode
+            if (isChangingPassword) {
+                const allowedKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Space', 'Escape', 'Backspace', 'Tab'];
+
+                if (allowedKeys.includes(e.key) || (e.key.length === 1)) {
+                    e.preventDefault();
+                    handlePasswordChange(e.key);
+                }
+                return;
+            }
+
+            const focusableElements = getAllFocusableElements();
+
+            // Left/Right arrow navigation (only when unlocked and not changing password)15;
 
             calibrationLetterElement.innerHTML = '';
             calibrationLetterElement.style.width = `${fontSize}pt`;
@@ -574,6 +841,40 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function (e) {
+            // Handle password input when overlay is visible
+            if (!isUnlocked) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Allow specific keys for password
+                const allowedKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Space', 'Escape', 'Backspace', 'Tab'];
+
+                if (allowedKeys.includes(e.key) || (e.key.length === 1)) {
+                    if (currentPasswordInput.length < 4) {
+                        currentPasswordInput.push(e.key);
+                        updatePasswordDisplay();
+
+                        if (currentPasswordInput.length === 4) {
+                            setTimeout(checkPassword, 300);
+                        }
+                    }
+                }
+                return;
+            }
+
+            // Handle password change mode
+            if (isChangingPassword) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const allowedKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Space', 'Escape', 'Backspace', 'Tab'];
+
+                if (allowedKeys.includes(e.key) || (e.key.length === 1)) {
+                    handlePasswordChange(e.key);
+                }
+                return;
+            }
+
             const focusableElements = getAllFocusableElements();
 
             // Left/Right arrow navigation
@@ -638,6 +939,9 @@
         // Initialize
         generateRowOptions();
         updateCalibrationDisplay();
+
+        // Lock settings initially
+        document.getElementById('settings-content').classList.add('settings-locked');
 
         // Try to load saved settings on page load
         const saved = loadFromStorage();
